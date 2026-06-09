@@ -2,6 +2,11 @@
 // 每条新闻挂一个真实的 Polymarket 市场（marketSlug），盘口赔率在渲染时实时拉取。
 // tldr 是「AI 摘要」的占位（M3 接入新闻源 + LLM 自动生成）。
 
+export interface NewsVideo {
+  youtubeId: string; // YouTube 视频 ID（真实、可嵌入）
+  channel: string; // 频道名，信息流标注「视频 · 频道」
+}
+
 export interface NewsItem {
   id: string; // 路由用
   source: string; // 媒体名
@@ -14,6 +19,9 @@ export interface NewsItem {
   marketSlug: string; // 关联的 Polymarket event slug
   marketCategory: string; // 传给盘口卡的分类标签（Politics/Hot）
   originalUrl: string; // 原文来源
+  video?: NewsVideo; // 有则信息流是视频卡，无则用市场配图
+  likes: number; // 社交互动数（原型 mock）
+  comments: number;
 }
 
 export const NEWS: NewsItem[] = [
@@ -35,6 +43,9 @@ export const NEWS: NewsItem[] = [
     marketSlug: "us-x-iran-permanent-peace-deal-by",
     marketCategory: "Politics",
     originalUrl: "https://www.reuters.com",
+    video: { youtubeId: "qTajkTgBvHk", channel: "Al Jazeera English" },
+    likes: 2600,
+    comments: 200,
   },
   {
     id: "iran-airspace",
@@ -53,6 +64,8 @@ export const NEWS: NewsItem[] = [
     marketSlug: "iran-closes-its-airspace-by",
     marketCategory: "Politics",
     originalUrl: "https://www.bloomberg.com",
+    likes: 870,
+    comments: 64,
   },
   {
     id: "fed-june",
@@ -72,6 +85,9 @@ export const NEWS: NewsItem[] = [
     marketSlug: "fed-decision-in-june-825",
     marketCategory: "Hot",
     originalUrl: "https://www.bloomberg.com",
+    video: { youtubeId: "KtkIzI5nqTE", channel: "Yahoo Finance" },
+    likes: 1500,
+    comments: 132,
   },
   {
     id: "peru-election",
@@ -91,6 +107,8 @@ export const NEWS: NewsItem[] = [
     marketSlug: "peru-presidential-election-winner",
     marketCategory: "Politics",
     originalUrl: "https://apnews.com",
+    likes: 540,
+    comments: 48,
   },
   {
     id: "world-cup",
@@ -109,6 +127,9 @@ export const NEWS: NewsItem[] = [
     marketSlug: "world-cup-winner",
     marketCategory: "Hot",
     originalUrl: "https://www.espn.com",
+    video: { youtubeId: "R9wzwNlQzow", channel: "CBS Sports" },
+    likes: 3400,
+    comments: 287,
   },
   {
     id: "bitcoin-june",
@@ -128,6 +149,9 @@ export const NEWS: NewsItem[] = [
     marketSlug: "what-price-will-bitcoin-hit-in-june-2026",
     marketCategory: "Hot",
     originalUrl: "https://www.coindesk.com",
+    video: { youtubeId: "OFedWhCN9DM", channel: "Crypto Analysis" },
+    likes: 1900,
+    comments: 156,
   },
   {
     id: "nba-champion",
@@ -146,6 +170,9 @@ export const NEWS: NewsItem[] = [
     marketSlug: "2026-nba-champion",
     marketCategory: "Hot",
     originalUrl: "https://www.nytimes.com/athletic",
+    video: { youtubeId: "HwceS3VfDYQ", channel: "CBS Sports" },
+    likes: 2200,
+    comments: 198,
   },
   {
     id: "spacex-ipo",
@@ -165,6 +192,8 @@ export const NEWS: NewsItem[] = [
     marketSlug: "spacex-ipo-closing-market-cap-above",
     marketCategory: "Hot",
     originalUrl: "https://techcrunch.com",
+    likes: 1100,
+    comments: 89,
   },
   {
     id: "france-2027",
@@ -183,6 +212,8 @@ export const NEWS: NewsItem[] = [
     marketSlug: "next-french-presidential-election",
     marketCategory: "Politics",
     originalUrl: "https://www.lemonde.fr",
+    likes: 430,
+    comments: 37,
   },
   {
     id: "dem-2028",
@@ -201,6 +232,8 @@ export const NEWS: NewsItem[] = [
     marketSlug: "democratic-presidential-nominee-2028",
     marketCategory: "Politics",
     originalUrl: "https://www.politico.com",
+    likes: 760,
+    comments: 92,
   },
 ];
 

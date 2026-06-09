@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { getNewsById } from "@/lib/news";
 import { getMarketBySlug } from "@/lib/polymarket";
 import FeedCard from "@/components/FeedCard";
+import YouTubeLite from "@/components/YouTubeLite";
 
 export const dynamic = "force-dynamic";
 
@@ -56,6 +57,14 @@ export default async function NewsDetail({
           <h1 className="text-xl font-bold leading-snug text-gray-900">
             {news.headline}
           </h1>
+
+          {/* 视频（可播放） */}
+          {news.video && (
+            <div className="mt-3">
+              <YouTubeLite id={news.video.youtubeId} channel={news.video.channel} />
+            </div>
+          )}
+
           <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
             {news.summary}
           </p>
