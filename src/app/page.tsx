@@ -1,6 +1,9 @@
 import { NEWS } from "@/lib/news";
 import { getMarketsBySlugs } from "@/lib/polymarket";
 import NewsFeed, { type FeedEntry } from "@/components/NewsFeed";
+import AuthButton from "@/components/AuthButton";
+import { getProfile } from "@/lib/auth";
+import { supabaseEnabled } from "@/lib/supabase/env";
 
 // 信息流在请求时渲染（盘口数据来自 Polymarket，不在构建时预取）
 export const dynamic = "force-dynamic";
@@ -11,7 +14,10 @@ export default async function Home() {
   const categoryBySlug = Object.fromEntries(
     NEWS.map((n) => [n.marketSlug, n.marketCategory]),
   );
-  const markets = await getMarketsBySlugs(slugs, categoryBySlug);
+  const [markets, profile] = await Promise.all([
+    getMarketsBySlugs(slugs, categoryBySlug),
+    getProfile(),
+  ]);
 
   const entries: FeedEntry[] = NEWS.map((news) => ({
     news,
@@ -27,7 +33,7 @@ export default async function Home() {
             <span className="font-bold text-lg tracking-tight">AutoVote</span>
             <span className="text-xs text-gray-400">新闻预测信息流</span>
           </div>
-          <span className="text-xs text-gray-400">虚拟积分 · 跟随 Polymarket</span>
+          <AuthButton profile={profile} enabled={supabaseEnabled} />
         </div>
       </header>
 

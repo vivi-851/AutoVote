@@ -4,6 +4,9 @@ import { getNewsById } from "@/lib/news";
 import { getMarketBySlug } from "@/lib/polymarket";
 import FeedCard from "@/components/FeedCard";
 import YouTubeLite from "@/components/YouTubeLite";
+import AuthButton from "@/components/AuthButton";
+import { getProfile } from "@/lib/auth";
+import { supabaseEnabled } from "@/lib/supabase/env";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +26,10 @@ export default async function NewsDetail({
   const news = getNewsById(id);
   if (!news) notFound();
 
-  const market = await getMarketBySlug(news.marketSlug, news.marketCategory);
+  const [market, profile] = await Promise.all([
+    getMarketBySlug(news.marketSlug, news.marketCategory),
+    getProfile(),
+  ]);
 
   return (
     <main className="min-h-full bg-[#fafafa]">
@@ -36,7 +42,9 @@ export default async function NewsDetail({
           >
             <span className="text-lg leading-none">‹</span> 返回
           </Link>
-          <span className="text-xs text-gray-400 ml-auto">新闻详情</span>
+          <div className="ml-auto">
+            <AuthButton profile={profile} enabled={supabaseEnabled} />
+          </div>
         </div>
       </header>
 
@@ -100,7 +108,12 @@ export default async function NewsDetail({
             相关预测市场
           </div>
           {market ? (
-            <FeedCard card={market} />
+            <FeedCard
+              card={market}
+              newsId={news.id}
+              loggedIn={!!profile}
+              enabled={supabaseEnabled}
+            />
           ) : (
             <div className="rounded-2xl border border-dashed border-black/10 p-6 text-center text-sm text-gray-400">
               盘口暂不可用

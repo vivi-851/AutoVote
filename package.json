@@ -10,6 +10,8 @@
     "dev:fixture": "USE_FIXTURE=1 next dev"
   },
   "dependencies": {
+    "@supabase/ssr": "^0.12.0",
+    "@supabase/supabase-js": "^2.108.0",
     "next": "16.2.7",
     "react": "19.2.4",
     "react-dom": "19.2.4"
