@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "autovote",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["run", "dev:fixture"],
+      "port": 3000
+    }
+  ]
+}
