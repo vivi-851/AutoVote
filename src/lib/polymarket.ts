@@ -196,3 +196,52 @@ export async function getFeed(): Promise<FeedCard[]> {
   cards.sort((a, b) => b.volume24hr - a.volume24hr);
   return cards;
 }
+
+// 按 slug 批量取盘口（给新闻信息流挂载内嵌市场用）
+// 返回 slug -> FeedCard 的映射；categoryBySlug 给每条新闻指定分类标签
+export async function getMarketsBySlugs(
+  slugs: string[],
+  categoryBySlug: Record<string, string> = {},
+): Promise<Map<string, FeedCard>> {
+  const map = new Map<string, FeedCard>();
+  if (slugs.length === 0) return map;
+
+  const ingest = (evs: RawEvent[]) => {
+    for (const ev of evs) {
+      if (!slugs.includes(ev.slug)) continue;
+      const card = toFeedCard(ev, categoryBySlug[ev.slug] ?? "Hot");
+      if (card) map.set(ev.slug, card);
+    }
+  };
+
+  if (process.env.USE_FIXTURE === "1") {
+    const evs = [...(await readFixture("politics")), ...(await readFixture("trending"))];
+    ingest(evs);
+    return map;
+  }
+
+  const qs = new URLSearchParams({ closed: "false", archived: "false" });
+  for (const s of slugs) qs.append("slug", s);
+  try {
+    const res = await fetch(`${GAMMA}/events?${qs.toString()}`, {
+      headers: { Accept: "application/json" },
+      next: { revalidate: 300 },
+    });
+    if (!res.ok) {
+      console.error("Gamma slug fetch failed", res.status);
+      return map;
+    }
+    ingest((await res.json()) as RawEvent[]);
+  } catch (err) {
+    console.error("Gamma slug fetch error", err);
+  }
+  return map;
+}
+
+export async function getMarketBySlug(
+  slug: string,
+  category = "Hot",
+): Promise<FeedCard | null> {
+  const map = await getMarketsBySlugs([slug], { [slug]: category });
+  return map.get(slug) ?? null;
+}
