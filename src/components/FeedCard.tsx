@@ -18,7 +18,8 @@ function fmtEnd(iso: string | null) {
   if (!iso) return null;
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return null;
-  return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric" });
+  // 固定 UTC，避免服务端(UTC)与客户端(本地时区)格式化不一致导致 hydration 不匹配
+  return d.toLocaleDateString("zh-CN", { month: "short", day: "numeric", timeZone: "UTC" });
 }
 
 const catStyle: Record<string, string> = {
