@@ -15,20 +15,23 @@ export interface GNewsArticle {
   source: { name: string; url: string };
 }
 
-// 把 Polymarket 市场标题清洗成新闻搜索词
-// 例: "US x Iran permanent peace deal by...?" -> "US Iran permanent peace deal"
+// 把 Polymarket 市场标题清洗成新闻搜索词（取核心实体，最多 4 词）
+// 例: "US x Iran permanent peace deal by...?" -> "US Iran peace deal"
+const STOP = new Set(
+  ("the a an in on at by to of for and or vs will would where who what when which " +
+    "its it is are be above below under over per new next permanent total official " +
+    "full number winner win play plays")
+    .split(" "),
+);
 export function buildQuery(title: string): string {
-  let q = title
-    .replace(/by\.\.\.\??/gi, " ")
-    .replace(/\bwinner\b/gi, " ")
-    .replace(/[?#"]/g, " ")
-    .replace(/\b\d{4}\b/g, " ") // 去掉年份
-    .replace(/\bx\b/gi, " ")
+  const cleaned = title
+    .replace(/[^A-Za-z0-9 ]/g, " ") // 去掉所有标点（含 _ / . ? x 等，防 400）
     .replace(/\s+/g, " ")
     .trim();
-  // 取前 6 个词，避免查询过长稀释相关性
-  q = q.split(" ").slice(0, 6).join(" ");
-  return q;
+  const tokens = cleaned
+    .split(" ")
+    .filter((w) => !STOP.has(w.toLowerCase()) && !/^\d+$/.test(w) && w.length > 1);
+  return tokens.slice(0, 4).join(" ");
 }
 
 // 搜索单条市场对应的新闻，返回最相关/最新的若干篇
@@ -37,11 +40,11 @@ export async function searchNews(
   max = 3,
 ): Promise<GNewsArticle[]> {
   if (!gnewsEnabled || !query) return [];
+  // 注意：sortby=relevance 是 GNews 付费功能，免费版会返回空 articles，故用默认排序
   const qs = new URLSearchParams({
     q: query,
     lang: "en",
     max: String(max),
-    sortby: "relevance",
     apikey: GNEWS_KEY!,
   });
   try {
