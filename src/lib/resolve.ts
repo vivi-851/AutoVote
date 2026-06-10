@@ -10,10 +10,13 @@ export interface Judgement {
 }
 
 const SYSTEM =
-  "You are resolving a Yes/No prediction market. Given the QUESTION and RECENT NEWS, " +
-  "decide the real-world outcome. Output STRICT JSON only: " +
+  "You are resolving a Yes/No prediction market. Decide the real-world outcome of the QUESTION " +
+  "by its deadline. Prefer the RECENT NEWS when provided; if no news is given but the outcome is " +
+  "unambiguous from widely-known facts as of today, you may still decide. " +
+  "Output STRICT JSON only: " +
   '{"outcome": "yes" | "no" | "unknown", "confidence": number 0..1, "note": short reason}. ' +
-  "Answer 'yes' or 'no' ONLY if the news clearly determines the outcome; otherwise 'unknown'. " +
+  "Only answer 'yes' or 'no' when genuinely confident; if the event is still uncertain or undecided, " +
+  "answer 'unknown'. " +
   `Today is ${new Date().toISOString().slice(0, 10)}.`;
 
 export async function judgeMarket(
