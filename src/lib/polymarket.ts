@@ -10,6 +10,7 @@ interface RawMarket {
   groupItemTitle?: string;
   outcomes?: string; // JSON 字符串: ["Yes","No"]
   outcomePrices?: string; // JSON 字符串: ["0.62","0.38"]
+  clobTokenIds?: string; // JSON 字符串: [yesTokenId, noTokenId]，历史价格按 token 查
   closed?: boolean;
   active?: boolean;
 }
@@ -37,6 +38,12 @@ export interface Outcome {
   label: string; // 选项名（如 "Yes" / "Macron" / "< Mar 31"）
   marketId: string; // 对应的市场 id，下注时用
   probability: number; // 0~1
+  clobTokenId: string; // 该选项对应的 CLOB token，用于查历史价格
+}
+
+export interface PricePoint {
+  t: number; // unix 秒
+  p: number; // 0~1
 }
 
 export interface FeedCard {
@@ -79,12 +86,14 @@ function toFeedCard(ev: RawEvent, category: string): FeedCard | null {
     const m = markets[0];
     const labels = parseJsonArray(m.outcomes);
     const prices = parseJsonArray(m.outcomePrices).map(Number);
+    const tokens = parseJsonArray(m.clobTokenIds);
     if (labels.length >= 2 && prices.length >= 2) {
       isBinary = labels.length === 2;
       outcomes = labels.map((label, i) => ({
         label,
         marketId: m.id,
         probability: prices[i] ?? 0,
+        clobTokenId: tokens[i] ?? "",
       }));
     }
   } else {
@@ -93,12 +102,14 @@ function toFeedCard(ev: RawEvent, category: string): FeedCard | null {
       .map((m) => {
         const labels = parseJsonArray(m.outcomes);
         const prices = parseJsonArray(m.outcomePrices).map(Number);
+        const tokens = parseJsonArray(m.clobTokenIds);
         const yesIdx = labels.findIndex((l) => l.toLowerCase() === "yes");
-        const prob = yesIdx >= 0 ? prices[yesIdx] ?? 0 : prices[0] ?? 0;
+        const idx = yesIdx >= 0 ? yesIdx : 0;
         return {
           label: m.groupItemTitle || m.question,
           marketId: m.id,
-          probability: prob,
+          probability: prices[idx] ?? 0,
+          clobTokenId: tokens[idx] ?? "",
         };
       })
       .filter((o) => o.probability > 0);
@@ -244,4 +255,27 @@ export async function getMarketBySlug(
 ): Promise<FeedCard | null> {
   const map = await getMarketsBySlugs([slug], { [slug]: category });
   return map.get(slug) ?? null;
+}
+
+// 取某个 CLOB token 的历史概率（用于组合市值曲线）
+const CLOB = "https://clob.polymarket.com";
+export async function getPriceHistory(
+  tokenId: string,
+  interval = "1m",
+  fidelity = 180,
+): Promise<PricePoint[]> {
+  if (!tokenId || process.env.USE_FIXTURE === "1") return [];
+  try {
+    const res = await fetch(
+      `${CLOB}/prices-history?market=${tokenId}&interval=${interval}&fidelity=${fidelity}`,
+      { next: { revalidate: 300 } },
+    );
+    if (!res.ok) return [];
+    const data = (await res.json()) as { history?: { t: number; p: number }[] };
+    return Array.isArray(data.history)
+      ? data.history.map((x) => ({ t: x.t, p: x.p }))
+      : [];
+  } catch {
+    return [];
+  }
 }

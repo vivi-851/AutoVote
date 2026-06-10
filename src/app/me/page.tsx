@@ -3,7 +3,9 @@ import { createClient } from "@/lib/supabase/server";
 import { supabaseEnabled } from "@/lib/supabase/env";
 import { getProfile } from "@/lib/auth";
 import { getMarketsBySlugs } from "@/lib/polymarket";
+import { buildPortfolioSeries, type Position } from "@/lib/portfolio";
 import AuthButton from "@/components/AuthButton";
+import PortfolioChart from "@/components/PortfolioChart";
 
 export const dynamic = "force-dynamic";
 
@@ -72,19 +74,26 @@ export default async function MyPredictions() {
 
   const rows = bets.map((b) => {
     const market = markets.get(b.market_slug) ?? null;
-    const current =
+    const outcome =
       market?.outcomes.find(
         (o) => o.marketId === b.outcome_market_id && o.label === b.outcome_label,
-      )?.probability ?? null;
+      ) ?? null;
+    const current = outcome?.probability ?? null;
     const curPrice = current ?? b.entry_price;
     const value = b.shares * curPrice;
     const pnl = value - b.stake;
-    return { ...b, curPrice, value, pnl, live: current !== null };
+    return { ...b, curPrice, value, pnl, live: current !== null, clobTokenId: outcome?.clobTokenId ?? "" };
   });
 
   const totalStaked = rows.reduce((s, r) => s + r.stake, 0);
   const totalValue = rows.reduce((s, r) => s + r.value, 0);
   const totalPnl = totalValue - totalStaked;
+
+  // 组合市值曲线（按当前持仓回看各盘口近一月真实概率）
+  const positions: Position[] = rows
+    .filter((r) => r.clobTokenId)
+    .map((r) => ({ shares: r.shares, clobTokenId: r.clobTokenId, entryPrice: r.entry_price }));
+  const series = await buildPortfolioSeries(positions);
 
   return (
     <Shell>
@@ -108,6 +117,20 @@ export default async function MyPredictions() {
             color={totalPnl >= 0 ? "text-green-600" : "text-red-500"}
           />
         </div>
+
+        {/* 组合市值曲线 */}
+        {series.length >= 2 && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-[11px] text-gray-400 mb-1">
+              <span>持仓市值走势（近一月）</span>
+              <span className="flex items-center gap-1">
+                <span className="inline-block w-3 border-t border-dashed border-gray-400" />
+                成本线
+              </span>
+            </div>
+            <PortfolioChart series={series} cost={totalStaked} />
+          </div>
+        )}
       </div>
 
       <div className="text-sm font-semibold text-gray-700 mb-2 px-1">
