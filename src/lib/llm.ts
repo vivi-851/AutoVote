@@ -37,6 +37,8 @@ export async function chatJSON<T>(
     model: LLM_MODEL,
     temperature: opts.temperature ?? 0.4,
     max_tokens: opts.maxTokens ?? 1200,
+    // 关闭 gemini-2.5 的思考模式：延迟从 ~25s 降到 ~1.5s，且省 token
+    reasoning_effort: "none",
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: system },
