@@ -1,10 +1,10 @@
 // LLM 客户端（OpenAI 兼容格式，默认接 Gemini，方便以后换模型）
 // 服务端密钥 GEMINI_API_KEY（非 NEXT_PUBLIC）。可用 LLM_BASE_URL / LLM_MODEL 覆盖。
 
-const LLM_KEY = process.env.GEMINI_API_KEY || process.env.LLM_API_KEY;
-const LLM_BASE_URL =
-  process.env.LLM_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai";
-const LLM_MODEL = process.env.LLM_MODEL || "gemini-2.5-flash";
+const LLM_KEY =
+  process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY || process.env.GEMINI_API_KEY;
+const LLM_BASE_URL = process.env.LLM_BASE_URL || "https://api.deepseek.com";
+const LLM_MODEL = process.env.LLM_MODEL || "deepseek-chat";
 
 export const llmEnabled = Boolean(LLM_KEY);
 
@@ -37,8 +37,6 @@ export async function chatJSON<T>(
     model: LLM_MODEL,
     temperature: opts.temperature ?? 0.4,
     max_tokens: opts.maxTokens ?? 1200,
-    // 关闭 gemini-2.5 的思考模式：延迟从 ~25s 降到 ~1.5s，且省 token
-    reasoning_effort: "none",
     response_format: { type: "json_object" },
     messages: [
       { role: "system", content: system },
