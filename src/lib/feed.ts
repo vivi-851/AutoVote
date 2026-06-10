@@ -155,9 +155,11 @@ async function curatedEntries(): Promise<FeedEntry[]> {
   return NEWS.map((news) => ({ news, market: markets.get(news.marketSlug) ?? null }));
 }
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // ── 单条（详情页）─────────────────────────────────
 export async function getFeedEntry(id: string): Promise<FeedEntry | null> {
-  if (id.startsWith("gen:")) return getGeneratedEntry(id.slice(4));
+  if (UUID_RE.test(id)) return getGeneratedEntry(id); // AI 生成盘口
 
   if (gnewsEnabled) {
     const market = await getMarketBySlug(id);

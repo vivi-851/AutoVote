@@ -38,8 +38,8 @@ export function genPriceYes(row: { pool_yes: number; pool_no: number }): number 
 function toEntry(row: GenMarketRow): FeedEntry {
   const priceYes = genPriceYes(row);
   const market: FeedCard = {
-    id: `gen:${row.id}`,
-    slug: `gen:${row.id}`,
+    id: row.id,
+    slug: row.id,
     title: row.question,
     description: "",
     image: null,
@@ -57,7 +57,7 @@ function toEntry(row: GenMarketRow): FeedEntry {
     genMarketId: row.id,
   };
   const news: NewsItem = {
-    id: `gen:${row.id}`,
+    id: row.id,
     source: row.news_source || "AI 盘口",
     handle: "@ai",
     category: row.category || "热点",
@@ -65,7 +65,7 @@ function toEntry(row: GenMarketRow): FeedEntry {
     summary: row.question,
     tldr: [row.question, `初始概率 ${Math.round(row.init_prob * 100)}%（AI 估计，随下注浮动）`],
     publishedAgo: "AI 生成",
-    marketSlug: `gen:${row.id}`,
+    marketSlug: row.id,
     marketCategory: "Hot",
     originalUrl: row.news_url || "#",
     likes: pseudo(row.id, 50, 800),

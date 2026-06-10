@@ -201,7 +201,7 @@ export default async function MyPredictions() {
                 </div>
                 {(r.news_id || r.generated) && (
                   <Link
-                    href={`/news/${r.news_id ?? `gen:${r.gen_market_id}`}`}
+                    href={`/news/${r.news_id ?? r.gen_market_id}`}
                     className="inline-block mt-2 text-[12px] text-indigo-600 hover:underline"
                   >
                     {r.generated ? "查看盘口 →" : "查看原新闻 →"}
