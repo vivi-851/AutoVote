@@ -68,7 +68,7 @@ export async function generateFromArticle(a: GNewsArticle): Promise<MarketDraft 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 // 拉一批头条 → 串行生成盘口草稿（对 Gemini 速率限制友好；2.0-flash 足够快）
-export async function generateDrafts(limit = 6): Promise<MarketDraft[]> {
+export async function generateDrafts(limit = 4): Promise<MarketDraft[]> {
   if (!llmEnabled) return [];
   const articles = (await topHeadlines("general", Math.max(limit + 3, 10))).filter(
     (a) => a.title,
