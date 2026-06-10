@@ -65,16 +65,12 @@ export async function generateFromArticle(a: GNewsArticle): Promise<MarketDraft 
   };
 }
 
-// 拉一批头条 → 逐条生成盘口草稿（供生成路由写库）
+// 拉一批头条 → 并发生成盘口草稿（Gemini 不限并发，避免串行超时）
 export async function generateDrafts(limit = 6): Promise<MarketDraft[]> {
   if (!llmEnabled) return [];
-  const articles = await topHeadlines("general", Math.max(limit, 8));
-  const drafts: MarketDraft[] = [];
-  for (const a of articles) {
-    if (drafts.length >= limit) break;
-    if (!a.title) continue;
-    const d = await generateFromArticle(a);
-    if (d) drafts.push(d);
-  }
-  return drafts;
+  const articles = (await topHeadlines("general", Math.max(limit + 3, 10)))
+    .filter((a) => a.title)
+    .slice(0, limit + 3);
+  const results = await Promise.all(articles.map((a) => generateFromArticle(a)));
+  return results.filter((d): d is MarketDraft => !!d).slice(0, limit);
 }
