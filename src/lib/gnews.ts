@@ -34,7 +34,10 @@ export function buildQuery(title: string): string {
   return tokens.slice(0, 4).join(" ");
 }
 
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 // 搜索单条市场对应的新闻，返回最相关/最新的若干篇
+// noStore 模式（组装信息流时）带 429 自动重试，避免免费版限流导致漏抓
 export async function searchNews(
   query: string,
   max = 3,
@@ -48,20 +51,33 @@ export async function searchNews(
     max: String(max),
     apikey: GNEWS_KEY!,
   });
-  try {
-    const res = await fetch(`${GNEWS}/search?${qs.toString()}`, {
-      headers: { Accept: "application/json" },
-      // 默认缓存 3 小时；在 unstable_cache 内部调用时用 no-store
-      ...(opts.noStore ? { cache: "no-store" as const } : { next: { revalidate: 10800 } }),
-    });
-    if (!res.ok) {
-      console.error("GNews fetch failed", res.status);
+  const url = `${GNEWS}/search?${qs.toString()}`;
+  const tries = opts.noStore ? 4 : 1;
+
+  for (let attempt = 0; attempt < tries; attempt++) {
+    try {
+      const res = await fetch(url, {
+        headers: { Accept: "application/json" },
+        ...(opts.noStore ? { cache: "no-store" as const } : { next: { revalidate: 10800 } }),
+      });
+      if (res.status === 429 && attempt < tries - 1) {
+        await sleep(2500 * (attempt + 1)); // 撞限流→退避重试
+        continue;
+      }
+      if (!res.ok) {
+        console.error("GNews fetch failed", res.status);
+        return [];
+      }
+      const data = (await res.json()) as { articles?: GNewsArticle[] };
+      return Array.isArray(data.articles) ? data.articles : [];
+    } catch (err) {
+      if (attempt < tries - 1) {
+        await sleep(1500);
+        continue;
+      }
+      console.error("GNews fetch error", err);
       return [];
     }
-    const data = (await res.json()) as { articles?: GNewsArticle[] };
-    return Array.isArray(data.articles) ? data.articles : [];
-  } catch (err) {
-    console.error("GNews fetch error", err);
-    return [];
   }
+  return [];
 }

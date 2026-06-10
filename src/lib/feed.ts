@@ -112,12 +112,12 @@ async function assembleRealFeed(): Promise<FeedEntry[]> {
     const card = cards[i];
     const arts = await searchNews(buildQuery(card.title), 1, { noStore: true });
     if (arts[0]) entries.push({ news: articleToNews(card, arts[0]), market: card });
-    if (i < cards.length - 1) await sleep(1300); // 避免 GNews 429
+    if (i < cards.length - 1) await sleep(1500); // 避免 GNews 429（配合 searchNews 内重试）
   }
   return entries;
 }
 
-const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v1"], {
+const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v2"], {
   revalidate: 21600, // 6 小时
 });
 
