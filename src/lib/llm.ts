@@ -25,42 +25,52 @@ function extractJson<T>(text: string): T | null {
 }
 
 // 让模型返回 JSON 对象并解析；失败返回 null
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export async function chatJSON<T>(
   system: string,
   user: string,
   opts: { temperature?: number; maxTokens?: number } = {},
 ): Promise<T | null> {
   if (!llmEnabled) return null;
-  try {
-    const res = await fetch(`${LLM_BASE_URL}/chat/completions`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${LLM_KEY}`,
-      },
-      cache: "no-store",
-      body: JSON.stringify({
-        model: LLM_MODEL,
-        temperature: opts.temperature ?? 0.4,
-        max_tokens: opts.maxTokens ?? 600,
-        response_format: { type: "json_object" },
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-      }),
-    });
-    if (!res.ok) {
-      console.error("LLM call failed", res.status, await res.text().catch(() => ""));
+  const body = JSON.stringify({
+    model: LLM_MODEL,
+    temperature: opts.temperature ?? 0.4,
+    max_tokens: opts.maxTokens ?? 1200,
+    response_format: { type: "json_object" },
+    messages: [
+      { role: "system", content: system },
+      { role: "user", content: user },
+    ],
+  });
+
+  // Gemini 偶发 503/429（过载/限流）→ 退避重试
+  for (let attempt = 0; attempt < 4; attempt++) {
+    try {
+      const res = await fetch(`${LLM_BASE_URL}/chat/completions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${LLM_KEY}` },
+        cache: "no-store",
+        body,
+      });
+      if ((res.status === 503 || res.status === 429 || res.status === 500) && attempt < 3) {
+        await sleep(1500 * (attempt + 1));
+        continue;
+      }
+      if (!res.ok) {
+        console.error("LLM call failed", res.status, (await res.text().catch(() => "")).slice(0, 200));
+        return null;
+      }
+      const data = (await res.json()) as { choices?: { message?: { content?: string } }[] };
+      return extractJson<T>(data.choices?.[0]?.message?.content ?? "");
+    } catch (err) {
+      if (attempt < 3) {
+        await sleep(1500);
+        continue;
+      }
+      console.error("LLM call error", err);
       return null;
     }
-    const data = (await res.json()) as {
-      choices?: { message?: { content?: string } }[];
-    };
-    const content = data.choices?.[0]?.message?.content ?? "";
-    return extractJson<T>(content);
-  } catch (err) {
-    console.error("LLM call error", err);
-    return null;
   }
+  return null;
 }
