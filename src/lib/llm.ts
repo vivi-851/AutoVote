@@ -1,8 +1,7 @@
 // LLM 客户端（OpenAI 兼容格式，默认接 Gemini，方便以后换模型）
 // 服务端密钥 GEMINI_API_KEY（非 NEXT_PUBLIC）。可用 LLM_BASE_URL / LLM_MODEL 覆盖。
 
-const LLM_KEY =
-  process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY || process.env.GEMINI_API_KEY;
+const LLM_KEY = process.env.DEEPSEEK_API_KEY || process.env.LLM_API_KEY;
 const LLM_BASE_URL = process.env.LLM_BASE_URL || "https://api.deepseek.com";
 const LLM_MODEL = process.env.LLM_MODEL || "deepseek-chat";
 
