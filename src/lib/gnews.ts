@@ -36,6 +36,35 @@ export function buildQuery(title: string): string {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+// 拉某分类的头条新闻（用于 AI 生成盘口的素材，通常没有现成 Polymarket 盘口）
+export async function topHeadlines(
+  category = "general",
+  max = 10,
+): Promise<GNewsArticle[]> {
+  if (!gnewsEnabled) return [];
+  const qs = new URLSearchParams({
+    category,
+    lang: "en",
+    max: String(max),
+    apikey: GNEWS_KEY!,
+  });
+  try {
+    const res = await fetch(`${GNEWS}/top-headlines?${qs.toString()}`, {
+      headers: { Accept: "application/json" },
+      cache: "no-store",
+    });
+    if (!res.ok) {
+      console.error("GNews top-headlines failed", res.status);
+      return [];
+    }
+    const data = (await res.json()) as { articles?: GNewsArticle[] };
+    return Array.isArray(data.articles) ? data.articles : [];
+  } catch (err) {
+    console.error("GNews top-headlines error", err);
+    return [];
+  }
+}
+
 // 搜索单条市场对应的新闻，返回最相关/最新的若干篇
 // noStore 模式（组装信息流时）带 429 自动重试，避免免费版限流导致漏抓
 export async function searchNews(
