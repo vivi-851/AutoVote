@@ -163,7 +163,10 @@ async function readFixture(tag?: string): Promise<RawEvent[]> {
   }
 }
 
-async function fetchEvents(params: Record<string, string>): Promise<RawEvent[]> {
+async function fetchEvents(
+  params: Record<string, string>,
+  opts: { noStore?: boolean } = {},
+): Promise<RawEvent[]> {
   if (process.env.USE_FIXTURE === "1") {
     return readFixture(params.tag_slug);
   }
@@ -179,8 +182,8 @@ async function fetchEvents(params: Record<string, string>): Promise<RawEvent[]> 
   try {
     const res = await fetch(`${GAMMA}/events?${qs.toString()}`, {
       headers: { Accept: "application/json" },
-      // 信息流：缓存 5 分钟，避免每次请求都打 Polymarket
-      next: { revalidate: 300 },
+      // 默认缓存 5 分钟；在 unstable_cache 内部调用时用 no-store（避免嵌套缓存冲突）
+      ...(opts.noStore ? { cache: "no-store" as const } : { next: { revalidate: 300 } }),
     });
     if (!res.ok) {
       console.error("Gamma fetch failed", res.status);
@@ -194,10 +197,10 @@ async function fetchEvents(params: Record<string, string>): Promise<RawEvent[]> 
 }
 
 // 拉政治 + 泛热点（按 24h 成交量排序）的信息流
-export async function getFeed(): Promise<FeedCard[]> {
+export async function getFeed(opts: { noStore?: boolean } = {}): Promise<FeedCard[]> {
   const [politics, trending] = await Promise.all([
-    fetchEvents({ tag_slug: "politics", limit: "20" }),
-    fetchEvents({ limit: "20" }), // 不带标签 = 全站热门
+    fetchEvents({ tag_slug: "politics", limit: "20" }, opts),
+    fetchEvents({ limit: "20" }, opts), // 不带标签 = 全站热门
   ]);
 
   const seen = new Set<string>();

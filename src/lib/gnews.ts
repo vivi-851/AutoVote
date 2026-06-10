@@ -38,6 +38,7 @@ export function buildQuery(title: string): string {
 export async function searchNews(
   query: string,
   max = 3,
+  opts: { noStore?: boolean } = {},
 ): Promise<GNewsArticle[]> {
   if (!gnewsEnabled || !query) return [];
   // 注意：sortby=relevance 是 GNews 付费功能，免费版会返回空 articles，故用默认排序
@@ -50,8 +51,8 @@ export async function searchNews(
   try {
     const res = await fetch(`${GNEWS}/search?${qs.toString()}`, {
       headers: { Accept: "application/json" },
-      // 真实新闻：缓存 3 小时，控制免费额度（100 次/天）
-      next: { revalidate: 10800 },
+      // 默认缓存 3 小时；在 unstable_cache 内部调用时用 no-store
+      ...(opts.noStore ? { cache: "no-store" as const } : { next: { revalidate: 10800 } }),
     });
     if (!res.ok) {
       console.error("GNews fetch failed", res.status);

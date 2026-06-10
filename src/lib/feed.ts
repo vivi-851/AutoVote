@@ -2,6 +2,7 @@
 // - 配了 GNEWS_API_KEY：市场优先，从 Polymarket 活跃市场出发，为每个市场搜配套真实新闻
 // - 没配：回退到手工策划的 NEWS（demo 内容），保证线上始终可用
 
+import { unstable_cache } from "next/cache";
 import { NEWS, getNewsById, type NewsItem } from "./news";
 import {
   getFeed,
@@ -16,7 +17,8 @@ export interface FeedEntry {
   market: FeedCard | null;
 }
 
-const REAL_FEED_SIZE = 12;
+const REAL_FEED_SIZE = 10;
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function timeAgo(iso: string): string {
   const t = new Date(iso).getTime();
@@ -101,20 +103,30 @@ function marketOnlyNews(market: FeedCard): NewsItem {
   };
 }
 
+// 组装真实信息流：GNews 免费版严格限流并发，必须串行 + 间隔（~1.3s）请求。
+// 整份结果用 unstable_cache 缓存 6 小时，慢的组装每 6 小时只跑一次。
+async function assembleRealFeed(): Promise<FeedEntry[]> {
+  const cards = (await getFeed({ noStore: true })).slice(0, REAL_FEED_SIZE);
+  const entries: FeedEntry[] = [];
+  for (let i = 0; i < cards.length; i++) {
+    const card = cards[i];
+    const arts = await searchNews(buildQuery(card.title), 1, { noStore: true });
+    if (arts[0]) entries.push({ news: articleToNews(card, arts[0]), market: card });
+    if (i < cards.length - 1) await sleep(1300); // 避免 GNews 429
+  }
+  return entries;
+}
+
+const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v1"], {
+  revalidate: 21600, // 6 小时
+});
+
 // ── 信息流列表 ──────────────────────────────────────
 export async function getFeedEntries(): Promise<FeedEntry[]> {
   if (gnewsEnabled) {
-    const cards = (await getFeed()).slice(0, REAL_FEED_SIZE);
-    const articles = await Promise.all(
-      cards.map((c) => searchNews(buildQuery(c.title), 1)),
-    );
-    const entries: FeedEntry[] = [];
-    cards.forEach((card, i) => {
-      const art = articles[i]?.[0];
-      if (art) entries.push({ news: articleToNews(card, art), market: card });
-    });
+    const entries = await getCachedRealFeed();
     if (entries.length > 0) return entries;
-    // 真实源全部没命中（额度耗尽等）→ 回退策划内容
+    // 真实源全没命中（额度耗尽等）→ 回退策划内容
   }
   return curatedEntries();
 }

@@ -8,6 +8,8 @@ import { supabaseEnabled } from "@/lib/supabase/env";
 
 // 信息流在请求时渲染（盘口数据来自 Polymarket，不在构建时预取）
 export const dynamic = "force-dynamic";
+// 真实新闻每 6 小时冷启动时需串行抓取 ~10 条，给足时间避免超时
+export const maxDuration = 60;
 
 export default async function Home() {
   const [entries, profile] = await Promise.all([getFeedEntries(), getProfile()]);
