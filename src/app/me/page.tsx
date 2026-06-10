@@ -7,6 +7,7 @@ import { buildPortfolioSeries, type Position } from "@/lib/portfolio";
 import { getGenMarketsByIds, genPriceYes } from "@/lib/generated";
 import AuthButton from "@/components/AuthButton";
 import PortfolioChart from "@/components/PortfolioChart";
+import ClosePositionButton from "@/components/ClosePositionButton";
 
 export const dynamic = "force-dynamic";
 
@@ -67,6 +68,7 @@ export default async function MyPredictions() {
   const { data } = await supabase!
     .from("bets")
     .select("*")
+    .eq("closed", false)
     .order("created_at", { ascending: false });
   const bets = (data ?? []) as BetRow[];
 
@@ -199,14 +201,25 @@ export default async function MyPredictions() {
                     </div>
                   </div>
                 </div>
-                {(r.news_id || r.generated) && (
-                  <Link
-                    href={`/news/${r.news_id ?? r.gen_market_id}`}
-                    className="inline-block mt-2 text-[12px] text-indigo-600 hover:underline"
-                  >
-                    {r.generated ? "查看盘口 →" : "查看原新闻 →"}
-                  </Link>
-                )}
+                <div className="mt-2 flex items-center justify-between">
+                  {r.news_id || r.generated ? (
+                    <Link
+                      href={`/news/${r.news_id ?? r.gen_market_id}`}
+                      className="text-[12px] text-indigo-600 hover:underline"
+                    >
+                      {r.generated ? "查看盘口 →" : "查看原新闻 →"}
+                    </Link>
+                  ) : (
+                    <span />
+                  )}
+                  {!r.resolved && (
+                    <ClosePositionButton
+                      betId={r.id}
+                      price={r.curPrice}
+                      proceeds={Math.round(r.value)}
+                    />
+                  )}
+                </div>
               </div>
             );
           })}
