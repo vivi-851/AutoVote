@@ -4,6 +4,7 @@ import { supabaseEnabled } from "@/lib/supabase/env";
 import { getProfile } from "@/lib/auth";
 import { getMarketsBySlugs } from "@/lib/polymarket";
 import { buildPortfolioSeries, type Position } from "@/lib/portfolio";
+import { getGenMarketsByIds, genPriceYes } from "@/lib/generated";
 import AuthButton from "@/components/AuthButton";
 import PortfolioChart from "@/components/PortfolioChart";
 
@@ -12,7 +13,7 @@ export const dynamic = "force-dynamic";
 interface BetRow {
   id: string;
   news_id: string | null;
-  market_slug: string;
+  market_slug: string | null;
   market_title: string | null;
   outcome_label: string;
   outcome_market_id: string;
@@ -20,6 +21,7 @@ interface BetRow {
   stake: number;
   shares: number;
   created_at: string;
+  gen_market_id: string | null;
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -69,11 +71,36 @@ export default async function MyPredictions() {
   const bets = (data ?? []) as BetRow[];
 
   // 拉所有相关市场的当前价，做实时浮动盈亏
-  const slugs = [...new Set(bets.map((b) => b.market_slug))];
-  const markets = await getMarketsBySlugs(slugs);
+  const slugs = [...new Set(bets.map((b) => b.market_slug).filter((s): s is string => !!s))];
+  const genIds = [...new Set(bets.map((b) => b.gen_market_id).filter((s): s is string => !!s))];
+  const [markets, genMarkets] = await Promise.all([
+    getMarketsBySlugs(slugs),
+    getGenMarketsByIds(genIds),
+  ]);
 
   const rows = bets.map((b) => {
-    const market = markets.get(b.market_slug) ?? null;
+    // AI 生成盘口：当前价从池子算；已结算则按输赢计值
+    if (b.gen_market_id) {
+      const gm = genMarkets.get(b.gen_market_id);
+      const isYes = b.outcome_label.toLowerCase() === "yes";
+      let curPrice = b.entry_price;
+      let resolved = false;
+      let value = b.shares * b.entry_price;
+      if (gm) {
+        const py = genPriceYes(gm);
+        curPrice = isYes ? py : 1 - py;
+        if (gm.status === "resolved") {
+          resolved = true;
+          const won = gm.outcome === (isYes ? "yes" : "no");
+          value = won ? b.shares : 0;
+        } else {
+          value = b.shares * curPrice;
+        }
+      }
+      return { ...b, curPrice, value, pnl: value - b.stake, live: !!gm, clobTokenId: "", generated: true, resolved };
+    }
+
+    const market = markets.get(b.market_slug ?? "") ?? null;
     const outcome =
       market?.outcomes.find(
         (o) => o.marketId === b.outcome_market_id && o.label === b.outcome_label,
@@ -82,7 +109,7 @@ export default async function MyPredictions() {
     const curPrice = current ?? b.entry_price;
     const value = b.shares * curPrice;
     const pnl = value - b.stake;
-    return { ...b, curPrice, value, pnl, live: current !== null, clobTokenId: outcome?.clobTokenId ?? "" };
+    return { ...b, curPrice, value, pnl, live: current !== null, clobTokenId: outcome?.clobTokenId ?? "", generated: false, resolved: false };
   });
 
   const totalStaked = rows.reduce((s, r) => s + r.stake, 0);
@@ -153,6 +180,7 @@ export default async function MyPredictions() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <div className="text-[14px] font-medium text-gray-900 truncate">
+                      {r.generated && <span className="text-indigo-500">🤖 </span>}
                       {r.market_title ?? r.market_slug}
                     </div>
                     <div className="text-[12px] text-gray-500 mt-0.5">
@@ -165,16 +193,18 @@ export default async function MyPredictions() {
                       {Math.round(r.pnl)}
                     </div>
                     <div className="text-[11px] text-gray-400">
-                      现 {Math.round(r.curPrice * 100)}%{r.live ? "" : " · 待更新"}
+                      {r.resolved
+                        ? "已结算"
+                        : `现 ${Math.round(r.curPrice * 100)}%${r.live ? "" : " · 待更新"}`}
                     </div>
                   </div>
                 </div>
-                {r.news_id && (
+                {(r.news_id || r.generated) && (
                   <Link
-                    href={`/news/${r.news_id}`}
+                    href={`/news/${r.news_id ?? `gen:${r.gen_market_id}`}`}
                     className="inline-block mt-2 text-[12px] text-indigo-600 hover:underline"
                   >
-                    查看原新闻 →
+                    {r.generated ? "查看盘口 →" : "查看原新闻 →"}
                   </Link>
                 )}
               </div>

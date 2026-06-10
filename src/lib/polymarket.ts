@@ -62,6 +62,8 @@ export interface FeedCard {
   // 是否是简单的 Yes/No 二元市场（决定卡片交互形态）
   isBinary: boolean;
   polymarketUrl: string;
+  // 若为 AI 生成盘口，则为其 id（下注走 place_gen_bet 而非 place_bet）
+  genMarketId?: string;
 }
 
 function parseJsonArray(s: string | undefined): string[] {

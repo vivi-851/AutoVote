@@ -53,12 +53,19 @@ export default function NewsCard({
           <span className="ml-auto text-[11px] text-gray-400 shrink-0">{news.publishedAgo}</span>
         </div>
 
-        <span
-          className={`inline-block px-2 py-0.5 rounded-full ring-1 text-[11px] font-medium mb-2 ${
-            catColor[news.category] ?? "bg-gray-50 text-gray-600 ring-gray-200"
-          }`}
-        >
-          {news.category}
+        <span className="inline-flex items-center gap-1.5 mb-2">
+          <span
+            className={`px-2 py-0.5 rounded-full ring-1 text-[11px] font-medium ${
+              catColor[news.category] ?? "bg-gray-50 text-gray-600 ring-gray-200"
+            }`}
+          >
+            {news.category}
+          </span>
+          {news.generated && (
+            <span className="px-2 py-0.5 rounded-full ring-1 text-[11px] font-medium bg-indigo-50 text-indigo-600 ring-indigo-200">
+              🤖 AI 盘口
+            </span>
+          )}
         </span>
 
         <div className="flex gap-3">

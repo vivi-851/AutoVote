@@ -58,15 +58,21 @@ export default function QuickBet({
     if (!supabase) return;
     const key = o.marketId + o.label;
     setBusy(key);
-    const { error } = await supabase.rpc("place_bet", {
-      p_news_id: newsId,
-      p_market_slug: market!.slug,
-      p_market_title: market!.title,
-      p_outcome_label: o.label,
-      p_outcome_market_id: o.marketId,
-      p_entry_price: o.probability,
-      p_stake: QUICK_STAKE,
-    });
+    const { error } = market!.genMarketId
+      ? await supabase.rpc("place_gen_bet", {
+          p_gen_id: market!.genMarketId,
+          p_side: o.label.toLowerCase() === "yes" ? "yes" : "no",
+          p_stake: QUICK_STAKE,
+        })
+      : await supabase.rpc("place_bet", {
+          p_news_id: newsId,
+          p_market_slug: market!.slug,
+          p_market_title: market!.title,
+          p_outcome_label: o.label,
+          p_outcome_market_id: o.marketId,
+          p_entry_price: o.probability,
+          p_stake: QUICK_STAKE,
+        });
     setBusy(null);
     if (error) {
       setErr(error.message.includes("insufficient") ? "积分不足" : "下注失败");

@@ -80,15 +80,21 @@ export default function FeedCard({
     if (!supabase) return;
     setBusy(true);
     setError(null);
-    const { error: err } = await supabase.rpc("place_bet", {
-      p_news_id: newsId ?? null,
-      p_market_slug: card.slug,
-      p_market_title: card.title,
-      p_outcome_label: selected.label,
-      p_outcome_market_id: selected.marketId,
-      p_entry_price: selected.probability,
-      p_stake: stake,
-    });
+    const { error: err } = card.genMarketId
+      ? await supabase.rpc("place_gen_bet", {
+          p_gen_id: card.genMarketId,
+          p_side: selected.label.toLowerCase() === "yes" ? "yes" : "no",
+          p_stake: stake,
+        })
+      : await supabase.rpc("place_bet", {
+          p_news_id: newsId ?? null,
+          p_market_slug: card.slug,
+          p_market_title: card.title,
+          p_outcome_label: selected.label,
+          p_outcome_market_id: selected.marketId,
+          p_entry_price: selected.probability,
+          p_stake: stake,
+        });
     setBusy(false);
     if (err) {
       setError(err.message.includes("insufficient") ? "积分不足" : "下注失败，请重试");

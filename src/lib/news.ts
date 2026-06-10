@@ -22,6 +22,7 @@ export interface NewsItem {
   video?: NewsVideo; // 有则信息流是视频卡，无则用市场配图
   likes: number; // 社交互动数（原型 mock）
   comments: number;
+  generated?: boolean; // 是否为 AI 生成盘口（信息流加"AI 盘口"标记）
 }
 
 export const NEWS: NewsItem[] = [

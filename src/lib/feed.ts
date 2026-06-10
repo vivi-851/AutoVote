@@ -11,10 +11,25 @@ import {
   type FeedCard,
 } from "./polymarket";
 import { gnewsEnabled, searchNews, buildQuery, type GNewsArticle } from "./gnews";
+import { getGeneratedEntries, getGeneratedEntry } from "./generated";
 
 export interface FeedEntry {
   news: NewsItem;
   market: FeedCard | null;
+}
+
+// 把 AI 生成盘口均匀插进 Polymarket 信息流（每 2 条插 1 条生成）
+function interleave(gen: FeedEntry[], poly: FeedEntry[]): FeedEntry[] {
+  if (gen.length === 0) return poly;
+  if (poly.length === 0) return gen;
+  const out: FeedEntry[] = [];
+  let gi = 0;
+  for (let i = 0; i < poly.length; i++) {
+    out.push(poly[i]);
+    if ((i + 1) % 2 === 0 && gi < gen.length) out.push(gen[gi++]);
+  }
+  while (gi < gen.length) out.push(gen[gi++]);
+  return out;
 }
 
 const REAL_FEED_SIZE = 10;
@@ -123,12 +138,12 @@ const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v2"], {
 
 // ── 信息流列表 ──────────────────────────────────────
 export async function getFeedEntries(): Promise<FeedEntry[]> {
-  if (gnewsEnabled) {
-    const entries = await getCachedRealFeed();
-    if (entries.length > 0) return entries;
-    // 真实源全没命中（额度耗尽等）→ 回退策划内容
-  }
-  return curatedEntries();
+  const base = gnewsEnabled ? await getCachedRealFeed() : [];
+  const [polymarket, generated] = await Promise.all([
+    base.length > 0 ? Promise.resolve(base) : curatedEntries(),
+    getGeneratedEntries(8),
+  ]);
+  return interleave(generated, polymarket);
 }
 
 async function curatedEntries(): Promise<FeedEntry[]> {
@@ -142,6 +157,8 @@ async function curatedEntries(): Promise<FeedEntry[]> {
 
 // ── 单条（详情页）─────────────────────────────────
 export async function getFeedEntry(id: string): Promise<FeedEntry | null> {
+  if (id.startsWith("gen:")) return getGeneratedEntry(id.slice(4));
+
   if (gnewsEnabled) {
     const market = await getMarketBySlug(id);
     if (!market) {
