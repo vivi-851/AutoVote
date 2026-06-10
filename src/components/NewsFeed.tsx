@@ -10,7 +10,15 @@ export interface FeedEntry {
   market: FeedCard | null;
 }
 
-export default function NewsFeed({ entries }: { entries: FeedEntry[] }) {
+export default function NewsFeed({
+  entries,
+  loggedIn,
+  enabled,
+}: {
+  entries: FeedEntry[];
+  loggedIn: boolean;
+  enabled: boolean;
+}) {
   const [tab, setTab] = useState<string>("推荐");
 
   const shown =
@@ -46,7 +54,13 @@ export default function NewsFeed({ entries }: { entries: FeedEntry[] }) {
           </div>
         ) : (
           shown.map((e) => (
-            <NewsCard key={e.news.id} news={e.news} market={e.market} />
+            <NewsCard
+              key={e.news.id}
+              news={e.news}
+              market={e.market}
+              loggedIn={loggedIn}
+              enabled={enabled}
+            />
           ))
         )}
       </div>

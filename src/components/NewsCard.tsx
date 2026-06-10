@@ -3,10 +3,7 @@ import Image from "next/image";
 import type { NewsItem } from "@/lib/news";
 import type { FeedCard } from "@/lib/polymarket";
 import YouTubeLite from "./YouTubeLite";
-
-function pct(p: number) {
-  return `${Math.round(p * 100)}%`;
-}
+import QuickBet from "./QuickBet";
 
 function fmtCount(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -21,75 +18,16 @@ const catColor: Record<string, string> = {
   科技: "bg-cyan-50 text-cyan-600 ring-cyan-200",
 };
 
-// 内嵌盘口预览（不可下注，点击进详情才表态）
-function OddsPreview({ market }: { market: FeedCard | null }) {
-  if (!market) {
-    return (
-      <div className="mt-3 rounded-xl border border-dashed border-black/10 px-3 py-2.5 text-xs text-gray-400">
-        盘口暂不可用
-      </div>
-    );
-  }
-
-  const top = market.outcomes.slice(0, 2);
-
-  return (
-    <div className="mt-3 rounded-xl border border-black/8 bg-gray-50/70 px-3 py-2.5">
-      <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-medium text-gray-500 truncate">
-          📊 相关盘口 · {market.title}
-        </span>
-      </div>
-      {market.isBinary ? (
-        <div className="grid grid-cols-2 gap-2">
-          {top.map((o) => {
-            const isYes = o.label.toLowerCase() === "yes";
-            return (
-              <div
-                key={o.marketId}
-                className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] font-medium ring-1 ${
-                  isYes
-                    ? "bg-green-50 text-green-700 ring-green-200"
-                    : "bg-red-50 text-red-700 ring-red-200"
-                }`}
-              >
-                <span>{isYes ? "会发生" : "不会"}</span>
-                <span className="tabular-nums">{pct(o.probability)}</span>
-              </div>
-            );
-          })}
-        </div>
-      ) : (
-        <div className="space-y-1.5">
-          {top.map((o) => (
-            <div
-              key={o.marketId}
-              className="flex items-center gap-2 text-[13px] text-gray-700"
-            >
-              <span className="flex-1 truncate">{o.label}</span>
-              <div className="w-16 h-1.5 rounded-full bg-black/10 overflow-hidden">
-                <div className="h-full bg-indigo-400" style={{ width: pct(o.probability) }} />
-              </div>
-              <span className="tabular-nums w-9 text-right font-medium">
-                {pct(o.probability)}
-              </span>
-            </div>
-          ))}
-        </div>
-      )}
-      <div className="mt-2 text-[12px] font-medium text-indigo-600">
-        查看完整盘口并表态 →
-      </div>
-    </div>
-  );
-}
-
 export default function NewsCard({
   news,
   market,
+  loggedIn,
+  enabled,
 }: {
   news: NewsItem;
   market: FeedCard | null;
+  loggedIn: boolean;
+  enabled: boolean;
 }) {
   const hasVideo = !!news.video;
 
@@ -102,8 +40,8 @@ export default function NewsCard({
         </div>
       )}
 
+      {/* 文本区：点击进详情 */}
       <Link href={`/news/${news.id}`} className="block px-4 sm:px-5 pt-3.5">
-        {/* 来源行 */}
         <div className="flex items-center gap-2 mb-2.5">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-[11px] font-bold text-gray-600 shrink-0">
             {news.source.slice(0, 1)}
@@ -115,7 +53,6 @@ export default function NewsCard({
           <span className="ml-auto text-[11px] text-gray-400 shrink-0">{news.publishedAgo}</span>
         </div>
 
-        {/* 分类 chip */}
         <span
           className={`inline-block px-2 py-0.5 rounded-full ring-1 text-[11px] font-medium mb-2 ${
             catColor[news.category] ?? "bg-gray-50 text-gray-600 ring-gray-200"
@@ -124,7 +61,6 @@ export default function NewsCard({
           {news.category}
         </span>
 
-        {/* 标题 + 正文（图文卡带紧凑配图） */}
         <div className="flex gap-3">
           <div className="min-w-0 flex-1">
             <h2 className="font-semibold leading-snug text-[15px] text-gray-900">
@@ -145,12 +81,14 @@ export default function NewsCard({
             />
           )}
         </div>
-
-        {/* 内嵌盘口 */}
-        <OddsPreview market={market} />
       </Link>
 
-      {/* 互动行（社交流元素） */}
+      {/* 内嵌盘口：feed 内一键表态（不跳详情） */}
+      <div className="px-4 sm:px-5">
+        <QuickBet market={market} newsId={news.id} loggedIn={loggedIn} enabled={enabled} />
+      </div>
+
+      {/* 互动行 */}
       <div className="flex items-center gap-5 px-4 sm:px-5 py-3 mt-1 text-gray-400 text-[13px]">
         <span className="flex items-center gap-1.5">
           <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current stroke-[1.8]">

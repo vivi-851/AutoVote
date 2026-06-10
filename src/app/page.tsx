@@ -1,6 +1,7 @@
 import { NEWS } from "@/lib/news";
 import { getMarketsBySlugs } from "@/lib/polymarket";
 import NewsFeed, { type FeedEntry } from "@/components/NewsFeed";
+import FeaturedRail from "@/components/FeaturedRail";
 import AuthButton from "@/components/AuthButton";
 import { getProfile } from "@/lib/auth";
 import { supabaseEnabled } from "@/lib/supabase/env";
@@ -24,6 +25,12 @@ export default async function Home() {
     market: markets.get(news.marketSlug) ?? null,
   }));
 
+  const loggedIn = !!profile;
+  const FEATURED_IDS = ["us-iran-peace-talks", "fed-june", "world-cup", "bitcoin-june"];
+  const featured = FEATURED_IDS.map((id) => entries.find((e) => e.news.id === id)).filter(
+    (e): e is FeedEntry => !!e,
+  );
+
   return (
     <main className="min-h-full bg-[#fafafa]">
       {/* 顶部栏 */}
@@ -46,7 +53,9 @@ export default async function Home() {
           </p>
         </div>
 
-        <NewsFeed entries={entries} />
+        <FeaturedRail entries={featured} />
+
+        <NewsFeed entries={entries} loggedIn={loggedIn} enabled={supabaseEnabled} />
       </div>
 
       <footer className="max-w-xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-gray-300">
