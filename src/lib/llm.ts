@@ -4,7 +4,7 @@
 const LLM_KEY = process.env.GEMINI_API_KEY || process.env.LLM_API_KEY;
 const LLM_BASE_URL =
   process.env.LLM_BASE_URL || "https://generativelanguage.googleapis.com/v1beta/openai";
-const LLM_MODEL = process.env.LLM_MODEL || "gemini-2.5-flash";
+const LLM_MODEL = process.env.LLM_MODEL || "gemini-2.0-flash";
 
 export const llmEnabled = Boolean(LLM_KEY);
 
