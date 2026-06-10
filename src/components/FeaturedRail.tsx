@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { FeedEntry } from "./NewsFeed";
+import type { FeedEntry } from "@/lib/feed";
 
 const THEMES = [
   "from-blue-500 to-indigo-600",

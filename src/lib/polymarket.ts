@@ -56,6 +56,7 @@ export interface FeedCard {
   volume24hr: number;
   endDate: string | null;
   category: string; // 标签，如 "Politics"
+  newsCategory: string; // 由 Polymarket 标签推导的中文分类（政治/财经/加密/体育/科技/热点）
   // 信息流卡片要展示的预测选项（已按概率排序，最多取前 4）
   outcomes: Outcome[];
   // 是否是简单的 Yes/No 二元市场（决定卡片交互形态）
@@ -130,10 +131,23 @@ function toFeedCard(ev: RawEvent, category: string): FeedCard | null {
     volume24hr: ev.volume24hr ?? 0,
     endDate: ev.endDate ?? null,
     category,
+    newsCategory: deriveNewsCategory(ev.tags),
     outcomes,
     isBinary,
     polymarketUrl: `https://polymarket.com/event/${ev.slug}`,
   };
+}
+
+// 由 Polymarket 事件标签推导中文分类，用于真实新闻信息流的分类 tab
+function deriveNewsCategory(tags?: { label: string; slug: string }[]): string {
+  const s = (tags ?? []).map((t) => `${t.slug} ${t.label}`.toLowerCase()).join(" ");
+  const has = (...kw: string[]) => kw.some((k) => s.includes(k));
+  if (has("crypto", "bitcoin", "ethereum", "altcoin")) return "加密";
+  if (has("politic", "election", "geopolit", "war", "trump", "congress")) return "政治";
+  if (has("sport", "nba", "nfl", "soccer", "football", "world cup", "tennis", "f1")) return "体育";
+  if (has("tech", "ai", "spacex", "openai", "science")) return "科技";
+  if (has("econ", "fed", "inflation", "business", "finance", "rates", "stock")) return "财经";
+  return "热点";
 }
 
 // 离线/演示模式：USE_FIXTURE=1 时读本地快照，绕开网络（本地开发用，生产走实时）

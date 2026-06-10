@@ -2,13 +2,10 @@
 
 import { useState } from "react";
 import NewsCard from "./NewsCard";
-import { NEWS_TABS, type NewsItem } from "@/lib/news";
-import type { FeedCard } from "@/lib/polymarket";
+import { NEWS_TABS } from "@/lib/news";
+import type { FeedEntry } from "@/lib/feed";
 
-export interface FeedEntry {
-  news: NewsItem;
-  market: FeedCard | null;
-}
+export type { FeedEntry };
 
 export default function NewsFeed({
   entries,

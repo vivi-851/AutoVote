@@ -1,35 +1,19 @@
-import { NEWS } from "@/lib/news";
-import { getMarketsBySlugs } from "@/lib/polymarket";
-import NewsFeed, { type FeedEntry } from "@/components/NewsFeed";
+import NewsFeed from "@/components/NewsFeed";
 import FeaturedRail from "@/components/FeaturedRail";
 import AuthButton from "@/components/AuthButton";
 import { getProfile } from "@/lib/auth";
+import { getFeedEntries } from "@/lib/feed";
+import { gnewsEnabled } from "@/lib/gnews";
 import { supabaseEnabled } from "@/lib/supabase/env";
 
 // 信息流在请求时渲染（盘口数据来自 Polymarket，不在构建时预取）
 export const dynamic = "force-dynamic";
 
 export default async function Home() {
-  // 一次性批量拉取所有新闻关联的盘口
-  const slugs = NEWS.map((n) => n.marketSlug);
-  const categoryBySlug = Object.fromEntries(
-    NEWS.map((n) => [n.marketSlug, n.marketCategory]),
-  );
-  const [markets, profile] = await Promise.all([
-    getMarketsBySlugs(slugs, categoryBySlug),
-    getProfile(),
-  ]);
-
-  const entries: FeedEntry[] = NEWS.map((news) => ({
-    news,
-    market: markets.get(news.marketSlug) ?? null,
-  }));
+  const [entries, profile] = await Promise.all([getFeedEntries(), getProfile()]);
 
   const loggedIn = !!profile;
-  const FEATURED_IDS = ["us-iran-peace-talks", "fed-june", "world-cup", "bitcoin-june"];
-  const featured = FEATURED_IDS.map((id) => entries.find((e) => e.news.id === id)).filter(
-    (e): e is FeedEntry => !!e,
-  );
+  const featured = entries.slice(0, 4);
 
   return (
     <main className="min-h-full bg-[#fafafa]">
@@ -59,7 +43,9 @@ export default async function Home() {
       </div>
 
       <footer className="max-w-xl mx-auto px-4 pb-10 pt-2 text-center text-xs text-gray-300">
-        原型 · 新闻信息流 + 盘口 · 盘口数据来自 Polymarket Gamma API
+        {gnewsEnabled
+          ? "新闻来自 GNews · 盘口来自 Polymarket · 市场优先匹配"
+          : "原型 · 策划内容 · 盘口数据来自 Polymarket Gamma API"}
       </footer>
     </main>
   );

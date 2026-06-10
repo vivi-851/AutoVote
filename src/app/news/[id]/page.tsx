@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getNewsById } from "@/lib/news";
-import { getMarketBySlug } from "@/lib/polymarket";
+import { getFeedEntry } from "@/lib/feed";
 import FeedCard from "@/components/FeedCard";
 import YouTubeLite from "@/components/YouTubeLite";
 import AuthButton from "@/components/AuthButton";
@@ -23,13 +22,9 @@ export default async function NewsDetail({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const news = getNewsById(id);
-  if (!news) notFound();
-
-  const [market, profile] = await Promise.all([
-    getMarketBySlug(news.marketSlug, news.marketCategory),
-    getProfile(),
-  ]);
+  const [entry, profile] = await Promise.all([getFeedEntry(id), getProfile()]);
+  if (!entry) notFound();
+  const { news, market } = entry;
 
   return (
     <main className="min-h-full bg-[#fafafa]">
