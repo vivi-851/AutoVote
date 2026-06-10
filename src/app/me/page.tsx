@@ -23,6 +23,9 @@ interface BetRow {
   shares: number;
   created_at: string;
   gen_market_id: string | null;
+  closed: boolean;
+  exit_price: number | null;
+  proceeds: number | null;
 }
 
 function Shell({ children }: { children: React.ReactNode }) {
@@ -68,7 +71,6 @@ export default async function MyPredictions() {
   const { data } = await supabase!
     .from("bets")
     .select("*")
-    .eq("closed", false)
     .order("created_at", { ascending: false });
   const bets = (data ?? []) as BetRow[];
 
@@ -81,6 +83,19 @@ export default async function MyPredictions() {
   ]);
 
   const rows = bets.map((b) => {
+    const detailId = b.gen_market_id ?? b.news_id ?? b.market_slug ?? null;
+    const generated = !!b.gen_market_id;
+
+    // 已平仓：用退出价/到账兑现
+    if (b.closed) {
+      const value = b.proceeds ?? 0;
+      return {
+        ...b, detailId, generated, curPrice: b.exit_price ?? b.entry_price,
+        value, pnl: value - b.stake, live: true, clobTokenId: "",
+        resolved: false, isClosed: true,
+      };
+    }
+
     // AI 生成盘口：当前价从池子算；已结算则按输赢计值
     if (b.gen_market_id) {
       const gm = genMarkets.get(b.gen_market_id);
@@ -99,7 +114,7 @@ export default async function MyPredictions() {
           value = b.shares * curPrice;
         }
       }
-      return { ...b, curPrice, value, pnl: value - b.stake, live: !!gm, clobTokenId: "", generated: true, resolved };
+      return { ...b, detailId, generated, curPrice, value, pnl: value - b.stake, live: !!gm, clobTokenId: "", resolved, isClosed: false };
     }
 
     const market = markets.get(b.market_slug ?? "") ?? null;
@@ -110,16 +125,20 @@ export default async function MyPredictions() {
     const current = outcome?.probability ?? null;
     const curPrice = current ?? b.entry_price;
     const value = b.shares * curPrice;
-    const pnl = value - b.stake;
-    return { ...b, curPrice, value, pnl, live: current !== null, clobTokenId: outcome?.clobTokenId ?? "", generated: false, resolved: false };
+    return { ...b, detailId, generated, curPrice, value, pnl: value - b.stake, live: current !== null, clobTokenId: outcome?.clobTokenId ?? "", resolved: false, isClosed: false };
   });
 
-  const totalStaked = rows.reduce((s, r) => s + r.stake, 0);
-  const totalValue = rows.reduce((s, r) => s + r.value, 0);
+  // 当前持仓（活跃）vs 历史（已平仓 / 已结算）
+  const openRows = rows.filter((r) => !r.isClosed && !r.resolved);
+  const historyRows = rows.filter((r) => r.isClosed || r.resolved);
+
+  // 概览只统计当前持仓
+  const totalStaked = openRows.reduce((s, r) => s + r.stake, 0);
+  const totalValue = openRows.reduce((s, r) => s + r.value, 0);
   const totalPnl = totalValue - totalStaked;
 
   // 组合市值曲线（按当前持仓回看各盘口近一月真实概率）
-  const positions: Position[] = rows
+  const positions: Position[] = openRows
     .filter((r) => r.clobTokenId)
     .map((r) => ({ shares: r.shares, clobTokenId: r.clobTokenId, entryPrice: r.entry_price }));
   const series = await buildPortfolioSeries(positions);
@@ -163,73 +182,107 @@ export default async function MyPredictions() {
       </div>
 
       <div className="text-sm font-semibold text-gray-700 mb-2 px-1">
-        持仓 · {rows.length}
+        持仓 · {openRows.length}
       </div>
-
-      {rows.length === 0 ? (
-        <div className="text-center text-gray-400 py-16 text-sm">
-          还没有下注 —— 回信息流挑条新闻表个态吧
+      {openRows.length === 0 ? (
+        <div className="text-center text-gray-400 py-10 text-sm">
+          暂无持仓 —— 回信息流挑条新闻表个态吧
         </div>
       ) : (
         <div className="space-y-2.5">
-          {rows.map((r) => {
-            const up = r.pnl >= 0;
-            return (
-              <div
-                key={r.id}
-                className="rounded-xl bg-white ring-1 ring-black/8 shadow-sm p-3.5"
-              >
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0">
-                    <div className="text-[14px] font-medium text-gray-900 truncate">
-                      {r.generated && <span className="text-indigo-500">🤖 </span>}
-                      {r.market_title ?? r.market_slug}
-                    </div>
-                    <div className="text-[12px] text-gray-500 mt-0.5">
-                      押「{r.outcome_label}」· {r.stake} 分 @ {Math.round(r.entry_price * 100)}%
-                    </div>
-                  </div>
-                  <div className="text-right shrink-0">
-                    <div className={`text-[15px] font-bold tabular-nums ${up ? "text-green-600" : "text-red-500"}`}>
-                      {up ? "+" : ""}
-                      {Math.round(r.pnl)}
-                    </div>
-                    <div className="text-[11px] text-gray-400">
-                      {r.resolved
-                        ? "已结算"
-                        : `现 ${Math.round(r.curPrice * 100)}%${r.live ? "" : " · 待更新"}`}
-                    </div>
-                  </div>
-                </div>
-                <div className="mt-2 flex items-center justify-between">
-                  {r.news_id || r.generated ? (
-                    <Link
-                      href={`/news/${r.news_id ?? r.gen_market_id}`}
-                      className="text-[12px] text-indigo-600 hover:underline"
-                    >
-                      {r.generated ? "查看盘口 →" : "查看原新闻 →"}
-                    </Link>
-                  ) : (
-                    <span />
-                  )}
-                  {!r.resolved && (
-                    <ClosePositionButton
-                      betId={r.id}
-                      price={r.curPrice}
-                      proceeds={Math.round(r.value)}
-                    />
-                  )}
-                </div>
-              </div>
-            );
-          })}
+          {openRows.map((r) => (
+            <PositionCard key={r.id} r={r} />
+          ))}
         </div>
       )}
 
+      {historyRows.length > 0 && (
+        <>
+          <div className="text-sm font-semibold text-gray-700 mb-2 mt-6 px-1">
+            历史 · {historyRows.length}
+          </div>
+          <div className="space-y-2.5">
+            {historyRows.map((r) => (
+              <PositionCard key={r.id} r={r} />
+            ))}
+          </div>
+        </>
+      )}
+
       <p className="text-center text-[11px] text-gray-300 mt-6">
-        浮动盈亏按 Polymarket 实时概率计算 · 市场结算后转为最终成绩
+        浮动盈亏按实时价计算 · 平仓兑现已实现盈亏 · 市场结算后转为最终成绩
       </p>
     </Shell>
+  );
+}
+
+interface PosRow {
+  id: string;
+  market_title: string | null;
+  market_slug: string | null;
+  outcome_label: string;
+  stake: number;
+  entry_price: number;
+  curPrice: number;
+  value: number;
+  pnl: number;
+  live: boolean;
+  generated: boolean;
+  resolved: boolean;
+  isClosed: boolean;
+  detailId: string | null;
+}
+
+function PositionCard({ r }: { r: PosRow }) {
+  const up = r.pnl >= 0;
+  const active = !r.isClosed && !r.resolved;
+
+  const inner = (
+    <div className="flex items-start justify-between gap-3 p-3.5">
+      <div className="min-w-0">
+        <div className="text-[14px] font-medium text-gray-900 truncate">
+          {r.generated && <span className="text-indigo-500">🤖 </span>}
+          {r.market_title ?? r.market_slug}
+        </div>
+        <div className="text-[12px] text-gray-500 mt-0.5">
+          押「{r.outcome_label}」· {r.stake} 分 @ {Math.round(r.entry_price * 100)}%
+        </div>
+      </div>
+      <div className="text-right shrink-0">
+        <div className={`text-[15px] font-bold tabular-nums ${up ? "text-green-600" : "text-red-500"}`}>
+          {up ? "+" : ""}
+          {Math.round(r.pnl)}
+        </div>
+        <div className="text-[11px] text-gray-400">
+          {r.isClosed
+            ? `已平仓 · ${Math.round(r.curPrice * 100)}%`
+            : r.resolved
+            ? "已结算"
+            : `现 ${Math.round(r.curPrice * 100)}%${r.live ? "" : " · 待更新"}`}
+        </div>
+      </div>
+    </div>
+  );
+
+  return (
+    <div
+      className={`rounded-xl bg-white ring-1 ring-black/8 shadow-sm overflow-hidden ${
+        r.isClosed ? "opacity-75" : ""
+      }`}
+    >
+      {r.detailId ? (
+        <Link href={`/news/${r.detailId}`} className="block hover:bg-gray-50/60 transition">
+          {inner}
+        </Link>
+      ) : (
+        inner
+      )}
+      {active && (
+        <div className="flex items-center justify-end px-3.5 pb-3 -mt-1">
+          <ClosePositionButton betId={r.id} price={r.curPrice} proceeds={Math.round(r.value)} />
+        </div>
+      )}
+    </div>
   );
 }
 
