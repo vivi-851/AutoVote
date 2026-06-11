@@ -32,7 +32,7 @@ function interleave(gen: FeedEntry[], poly: FeedEntry[]): FeedEntry[] {
   return out;
 }
 
-const REAL_FEED_SIZE = 10;
+const REAL_FEED_SIZE = 14;
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 function timeAgo(iso: string): string {
@@ -132,7 +132,7 @@ async function assembleRealFeed(): Promise<FeedEntry[]> {
   return entries;
 }
 
-const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v2"], {
+const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v3"], {
   revalidate: 21600, // 6 小时
 });
 
@@ -141,7 +141,7 @@ export async function getFeedEntries(): Promise<FeedEntry[]> {
   const base = gnewsEnabled ? await getCachedRealFeed() : [];
   const [polymarket, generated] = await Promise.all([
     base.length > 0 ? Promise.resolve(base) : curatedEntries(),
-    getGeneratedEntries(8),
+    getGeneratedEntries(14),
   ]);
   return interleave(generated, polymarket);
 }
