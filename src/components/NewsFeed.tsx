@@ -20,7 +20,9 @@ export default function NewsFeed({
 }) {
   const [tab, setTab] = useState<string>("推荐");
   const [visible, setVisible] = useState(PAGE);
-  const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const sentinelRef = useRef<HTMLButtonElement | null>(null);
+
+  const loadMore = () => setVisible((v) => Math.min(v + PAGE, shownLenRef.current));
 
   const shown =
     tab === "推荐" ? entries : entries.filter((e) => e.news.category === tab);
@@ -95,13 +97,17 @@ export default function NewsFeed({
         )}
       </div>
 
-      {/* 滚动加载 / 到底提示 */}
+      {/* 滚动到底自动加载；也可点击加载（双保险） */}
       {shown.length > 0 &&
         (hasMore ? (
-          <div ref={sentinelRef} className="py-6 flex items-center justify-center gap-2 text-xs text-gray-400">
+          <button
+            ref={sentinelRef}
+            onClick={loadMore}
+            className="w-full py-5 flex items-center justify-center gap-2 text-[13px] text-gray-500 hover:text-gray-800 transition"
+          >
             <span className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 border-t-gray-500 animate-spin" />
-            加载更多…
-          </div>
+            加载更多
+          </button>
         ) : (
           <div className="py-6 text-center text-xs text-gray-300">没有更多了</div>
         ))}
