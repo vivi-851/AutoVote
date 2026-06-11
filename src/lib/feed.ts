@@ -8,10 +8,15 @@ import {
   getFeed,
   getMarketsBySlugs,
   getMarketBySlug,
+  getMarketsPage,
   type FeedCard,
 } from "./polymarket";
 import { gnewsEnabled, searchNews, buildQuery, type GNewsArticle } from "./gnews";
-import { getGeneratedEntries, getGeneratedEntry } from "./generated";
+import {
+  getGeneratedEntries,
+  getGeneratedEntry,
+  getGeneratedEntriesPage,
+} from "./generated";
 
 export interface FeedEntry {
   news: NewsItem;
@@ -156,6 +161,41 @@ async function curatedEntries(): Promise<FeedEntry[]> {
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+// ── 无限分页：加载下一批（Polymarket 按成交量翻页 + 新闻 + AI 盘口）──
+export interface MorePage {
+  entries: FeedEntry[];
+  pmOffset: number;
+  genOffset: number;
+  done: boolean;
+}
+
+export async function loadMoreEntries(
+  pmOffset: number,
+  genOffset: number,
+): Promise<MorePage> {
+  const PM = 6;
+  const GEN = 3;
+
+  const cards = gnewsEnabled ? await getMarketsPage(pmOffset, PM) : [];
+  const articles = await Promise.all(
+    cards.map((c) => searchNews(buildQuery(c.title), 1)),
+  );
+  const pm: FeedEntry[] = [];
+  cards.forEach((c, i) => {
+    const a = articles[i]?.[0];
+    if (a) pm.push({ news: articleToNews(c, a), market: c });
+  });
+
+  const gen = await getGeneratedEntriesPage(genOffset, GEN);
+
+  return {
+    entries: interleave(gen, pm),
+    pmOffset: pmOffset + cards.length,
+    genOffset: genOffset + gen.length,
+    done: cards.length === 0 && gen.length === 0,
+  };
+}
 
 // ── 单条（详情页）─────────────────────────────────
 export async function getFeedEntry(id: string): Promise<FeedEntry | null> {

@@ -88,6 +88,22 @@ export async function getGeneratedEntries(limit = 8): Promise<FeedEntry[]> {
   return ((data as GenMarketRow[]) ?? []).map(toEntry);
 }
 
+// 翻页取开放的生成盘口（无限分页用）
+export async function getGeneratedEntriesPage(
+  offset: number,
+  limit: number,
+): Promise<FeedEntry[]> {
+  const supabase = await createClient();
+  if (!supabase) return [];
+  const { data } = await supabase
+    .from("generated_markets")
+    .select("*")
+    .eq("status", "open")
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  return ((data as GenMarketRow[]) ?? []).map(toEntry);
+}
+
 export async function getGeneratedEntry(id: string): Promise<FeedEntry | null> {
   const supabase = await createClient();
   if (!supabase) return null;

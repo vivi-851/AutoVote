@@ -71,14 +71,17 @@ export default async function NewsDetail({
           <p className="mt-2 text-[14px] leading-relaxed text-gray-600">
             {news.summary}
           </p>
-          <a
-            href={news.originalUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="inline-block mt-2 text-[13px] text-indigo-600 hover:underline"
-          >
-            查看原文 ↗
-          </a>
+          {/^https?:\/\//.test(news.originalUrl) &&
+            !news.originalUrl.includes("example.com") && (
+              <a
+                href={news.originalUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-block mt-2 text-[13px] text-indigo-600 hover:underline"
+              >
+                查看原文 ↗
+              </a>
+            )}
         </div>
 
         {/* AI TL;DR */}

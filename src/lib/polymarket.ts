@@ -227,6 +227,22 @@ export async function getFeed(opts: { noStore?: boolean } = {}): Promise<FeedCar
   return cards;
 }
 
+// 按成交量翻页取市场（无限分页用）
+export async function getMarketsPage(offset: number, limit: number): Promise<FeedCard[]> {
+  const evs = await fetchEvents({
+    offset: String(Math.max(offset, 0)),
+    limit: String(limit),
+    order: "volume24hr",
+    ascending: "false",
+  });
+  const cards: FeedCard[] = [];
+  for (const ev of evs) {
+    const card = toFeedCard(ev, "Hot");
+    if (card) cards.push(card);
+  }
+  return cards;
+}
+
 // 按 slug 批量取盘口（给新闻信息流挂载内嵌市场用）
 // 返回 slug -> FeedCard 的映射；categoryBySlug 给每条新闻指定分类标签
 export async function getMarketsBySlugs(
