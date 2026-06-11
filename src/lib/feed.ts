@@ -12,6 +12,7 @@ import {
   type FeedCard,
 } from "./polymarket";
 import { gnewsEnabled, searchNews, buildQuery, type GNewsArticle } from "./gnews";
+import { searchVideo, youtubeEnabled } from "./youtube";
 import {
   getGeneratedEntries,
   getGeneratedEntry,
@@ -134,6 +135,17 @@ async function assembleRealFeed(): Promise<FeedEntry[]> {
     if (arts[0]) entries.push({ news: articleToNews(card, arts[0]), market: card });
     if (i < cards.length - 1) await sleep(1500); // 避免 GNews 429（配合 searchNews 内重试）
   }
+
+  // 给前几条配一个相关 YouTube 视频（每条 100 单位配额，控制数量）
+  if (youtubeEnabled) {
+    const n = Math.min(4, entries.length);
+    for (let i = 0; i < n; i++) {
+      const e = entries[i];
+      const vid = await searchVideo(buildQuery(e.market!.title), { noStore: true });
+      if (vid) e.news.video = vid;
+    }
+  }
+
   return entries;
 }
 
