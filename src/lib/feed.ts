@@ -141,7 +141,8 @@ async function assembleRealFeed(): Promise<FeedEntry[]> {
     const n = Math.min(4, entries.length);
     for (let i = 0; i < n; i++) {
       const e = entries[i];
-      const vid = await searchVideo(buildQuery(e.market!.title), { noStore: true });
+      // 加 "news" 偏向正规新闻频道、避开泛搜垃圾结果
+      const vid = await searchVideo(`${buildQuery(e.market!.title)} news`, { noStore: true });
       if (vid) e.news.video = vid;
     }
   }
