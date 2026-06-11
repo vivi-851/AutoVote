@@ -32,10 +32,12 @@
 - **账户与交易**：Supabase（Google OAuth + Postgres，全 RLS）。注册送 1000 积分；下注/平仓走原子 RPC（`place_bet` / `place_gen_bet` / `sell_bet`），校验积分→扣分/派分→记录。
 - **主题/语言**：主题用 class 策略 + CSS 变量（无闪烁脚本）；i18n 以中文为 key 的字典，客户端 `useT` + 服务端 `getServerT`（cookie 驱动，切换即 `router.refresh`）。
 
-### GNews 免费版的关键约束（已在代码中规避）
-- 100 次/天、严格限流并发、文章有 12 小时延迟、`sortby=relevance` 为付费功能。
-- 因此信息流抓取是**串行 + 1.5s 间隔 + 429 退避重试**，整份结果 `unstable_cache` 缓存 **6 小时**（每 6 小时冷启动抓 ~10 条，其余请求秒回）。`maxDuration=60` 防冷启动超时。
+### GNews 抓取策略
+- 当前用 GNews **付费版**（实时、配额充足）。
+- 首页内容池：串行 + 1.5s 间隔抓取，整份结果 `unstable_cache` 缓存 **6 小时**（控成本 + 防冷启动超时，`maxDuration=60`）。
+- "加载更多"无限分页：并发拉取下一批市场的新闻（`loadMoreFeed` Server Action）。
 - 无 `GNEWS_API_KEY` 时自动回退到手工策划内容（`src/lib/news.ts`），线上永不空窗。
+- 历史包袱：早期为兼容免费版做了 `429 退避重试`、避开付费的 `sortby=relevance` 等，代码保留无害。
 
 ## 环境变量
 | 变量 | 用途 | 必需 |
