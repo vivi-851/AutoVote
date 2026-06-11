@@ -83,9 +83,11 @@
 | `DEEPSEEK_API_KEY` | DeepSeek 服务端密钥（AI 生成/结算盘口）。可用 `LLM_BASE_URL`/`LLM_MODEL` 覆盖换其他 OpenAI 兼容模型 | AI 盘口 |
 
 未配置任一项时对应功能优雅降级（登录显示"待配置"、新闻回退策划内容、无 AI 盘口），不影响其余部分。
-数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）。
+数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）。
 
 埋点字段字典与漏斗 SQL 见 [`docs/analytics.md`](docs/analytics.md)。
+
+**运营后台** `/admin`（仅管理员）：漏斗看板（访客→点开→下注→出站、真实 vs AI 盘口 CTR、事件计数、每日趋势、热门盘口）。设管理员：`update public.profiles set is_admin = true where email = '你的邮箱';`
 
 ## 本地运行
 ```bash
@@ -108,6 +110,7 @@ src/
     page.tsx                  # 信息流首页（Server Component）
     news/[id]/page.tsx        # 新闻详情（id=市场 slug / 策划 id / 生成盘口 uuid）
     me/page.tsx               # 我的预测（持仓 + 历史 + 盈亏曲线 + 平仓）
+    admin/                    # 运营后台（管理员）：layout 鉴权门 + 漏斗看板
     auth/callback/route.ts    # Google OAuth 回调
     actions.ts                # Server Action：无限分页 loadMoreFeed
     api/generate/route.ts     # AI 生成盘口（拉头条 → DeepSeek → 写库）
@@ -135,6 +138,7 @@ supabase/
   generated_markets.sql       # 生成盘口表 + AMM + create/place_gen_bet/resolve RPC
   trading.sql                 # bets 平仓字段 + sell_bet RPC
   events.sql                  # 漏斗埋点事件表（append-only + RLS）
+  admin.sql                   # is_admin 标记 + admin_metrics 看板 RPC
 docs/
   analytics.md                # 埋点字段字典 + 漏斗 SQL
 vercel.json                   # 每日 cron：生成(08:00) / 结算(08:30)
