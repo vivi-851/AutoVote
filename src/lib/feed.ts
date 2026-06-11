@@ -150,7 +150,7 @@ async function assembleRealFeed(): Promise<FeedEntry[]> {
   return entries;
 }
 
-const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v3"], {
+const getCachedRealFeed = unstable_cache(assembleRealFeed, ["real-feed-v4"], {
   revalidate: 21600, // 6 小时
 });
 
