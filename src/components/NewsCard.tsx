@@ -2,11 +2,20 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useEffect, useRef } from "react";
 import type { NewsItem } from "@/lib/news";
 import type { FeedCard } from "@/lib/polymarket";
 import YouTubeLite from "./YouTubeLite";
 import QuickBet from "./QuickBet";
 import { useT } from "@/lib/i18n";
+import { track, trackImpression } from "@/lib/track";
+
+// 盘口类型：用于埋点拆分（真实盘口 vs AI 盘口）
+function marketKind(news: NewsItem, market: FeedCard | null): string | null {
+  if (news.generated || market?.genMarketId) return "generated";
+  if (market) return "polymarket";
+  return null;
+}
 
 function fmtCount(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -26,17 +35,41 @@ export default function NewsCard({
   market,
   loggedIn,
   enabled,
+  position,
 }: {
   news: NewsItem;
   market: FeedCard | null;
   loggedIn: boolean;
   enabled: boolean;
+  position?: number;
 }) {
   const { t } = useT();
   const hasVideo = !!news.video;
+  const ref = useRef<HTMLElement | null>(null);
+  const kind = marketKind(news, market);
+
+  // 曝光埋点：卡片首次进入视口时上报一次
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(
+      (es) => {
+        if (es[0].isIntersecting) {
+          trackImpression({ market_id: news.id, market_kind: kind, source: "organic", position });
+          obs.disconnect();
+        }
+      },
+      { threshold: 0.5 },
+    );
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [news.id, kind, position]);
 
   return (
-    <article className="rounded-2xl border border-black/8 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden hover:shadow-md transition">
+    <article
+      ref={ref}
+      className="rounded-2xl border border-black/8 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden hover:shadow-md transition"
+    >
       {/* 视频卡：顶部大图，点击播放（不跳转） */}
       {hasVideo && (
         <div className="px-3 pt-3">
@@ -45,7 +78,13 @@ export default function NewsCard({
       )}
 
       {/* 文本区：点击进详情 */}
-      <Link href={`/news/${news.id}`} className="block px-4 sm:px-5 pt-3.5">
+      <Link
+        href={`/news/${news.id}`}
+        onClick={() =>
+          track("card_open", { market_id: news.id, market_kind: kind, source: "organic", position })
+        }
+        className="block px-4 sm:px-5 pt-3.5"
+      >
         <div className="flex items-center gap-2 mb-2.5">
           <div className="w-7 h-7 rounded-full bg-gradient-to-br from-gray-200 to-gray-300 flex items-center justify-center text-[11px] font-bold text-gray-600 shrink-0">
             {news.source.slice(0, 1)}

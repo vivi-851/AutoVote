@@ -2,9 +2,27 @@ import { NextResponse, type NextRequest } from "next/server";
 import { createServerClient } from "@supabase/ssr";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, supabaseEnabled } from "@/lib/supabase/env";
 
+const ANON_COOKIE = "av_anon";
+const ANON_MAXAGE = 60 * 60 * 24 * 365; // 1 年
+
+// 给响应补一个匿名访客 id（埋点 anon_id）：贯穿登录前后、跨会话。
+function ensureAnonCookie(request: NextRequest, response: NextResponse) {
+  if (request.cookies.get(ANON_COOKIE)?.value) return;
+  response.cookies.set(ANON_COOKIE, crypto.randomUUID(), {
+    maxAge: ANON_MAXAGE,
+    path: "/",
+    sameSite: "lax",
+    // 不设 httpOnly：客户端埋点需要读取
+  });
+}
+
 // 刷新 Supabase 会话 cookie。未配置密钥时直接放行（不影响信息流）。
 export async function middleware(request: NextRequest) {
-  if (!supabaseEnabled) return NextResponse.next();
+  if (!supabaseEnabled) {
+    const res = NextResponse.next();
+    ensureAnonCookie(request, res);
+    return res;
+  }
 
   let response = NextResponse.next({ request });
 
@@ -24,6 +42,7 @@ export async function middleware(request: NextRequest) {
   });
 
   await supabase.auth.getUser();
+  ensureAnonCookie(request, response);
   return response;
 }
 

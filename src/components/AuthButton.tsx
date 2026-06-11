@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n";
+import { track } from "@/lib/track";
 import type { Profile } from "@/lib/auth";
 
 export default function AuthButton({
@@ -22,6 +23,7 @@ export default function AuthButton({
   async function login() {
     const supabase = createClient();
     if (!supabase) return;
+    track("signin_click", { props: { from: "header" } });
     setBusy(true);
     await supabase.auth.signInWithOAuth({
       provider: "google",

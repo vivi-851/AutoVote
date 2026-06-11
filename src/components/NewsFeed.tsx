@@ -5,6 +5,7 @@ import NewsCard from "./NewsCard";
 import { NEWS_TABS } from "@/lib/news";
 import { loadMoreFeed } from "@/app/actions";
 import { useT } from "@/lib/i18n";
+import { track } from "@/lib/track";
 import type { FeedEntry } from "@/lib/feed";
 
 export type { FeedEntry };
@@ -58,6 +59,7 @@ export default function NewsFeed({
     // 池子放完了 → 只有「推荐」tab 去服务端拉真正的下一页
     if (s.tab !== "推荐" || s.loadingMore || s.ended) return;
     setLoadingMore(true);
+    track("load_more", { props: { pm_offset: pmOffset, gen_offset: genOffset } });
     try {
       const res = await loadMoreFeed(pmOffset, genOffset);
       setExtra((prev) => {
@@ -124,13 +126,14 @@ export default function NewsFeed({
             {t("该分类暂时没有内容")}
           </div>
         ) : (
-          displayed.map((e) => (
+          displayed.map((e, i) => (
             <NewsCard
               key={e.news.id}
               news={e.news}
               market={e.market}
               loggedIn={loggedIn}
               enabled={enabled}
+              position={i}
             />
           ))
         )}

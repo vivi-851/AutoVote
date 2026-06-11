@@ -83,7 +83,9 @@
 | `DEEPSEEK_API_KEY` | DeepSeek 服务端密钥（AI 生成/结算盘口）。可用 `LLM_BASE_URL`/`LLM_MODEL` 覆盖换其他 OpenAI 兼容模型 | AI 盘口 |
 
 未配置任一项时对应功能优雅降级（登录显示"待配置"、新闻回退策划内容、无 AI 盘口），不影响其余部分。
-数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）。
+数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）。
+
+埋点字段字典与漏斗 SQL 见 [`docs/analytics.md`](docs/analytics.md)。
 
 ## 本地运行
 ```bash
@@ -126,10 +128,14 @@ src/
     portfolio.ts / news.ts    # 组合市值序列 / 策划内容（回退）
     i18n-dict.ts / i18n.tsx / i18n-server.ts / theme.tsx   # 多语言 + 主题
     auth.ts / supabase/*      # 账户与会话
-  middleware.ts               # Supabase 会话刷新（无 key 时放行）
+    track.ts / outbound.ts    # 客户端漏斗埋点 / 出站返佣 choke-point
+  middleware.ts               # Supabase 会话刷新 + 写入匿名 id（埋点 anon_id）
 supabase/
   schema.sql                  # profiles / bets / place_bet / 触发器
   generated_markets.sql       # 生成盘口表 + AMM + create/place_gen_bet/resolve RPC
   trading.sql                 # bets 平仓字段 + sell_bet RPC
+  events.sql                  # 漏斗埋点事件表（append-only + RLS）
+docs/
+  analytics.md                # 埋点字段字典 + 漏斗 SQL
 vercel.json                   # 每日 cron：生成(08:00) / 结算(08:30)
 ```

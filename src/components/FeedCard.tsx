@@ -6,6 +6,8 @@ import { useRouter } from "next/navigation";
 import type { FeedCard as FeedCardData, Outcome } from "@/lib/polymarket";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n";
+import { track } from "@/lib/track";
+import { outboundMarketUrl } from "@/lib/outbound";
 
 function pct(p: number) {
   return `${Math.round(p * 100)}%`;
@@ -63,6 +65,7 @@ export default function FeedCard({
 
     // 未登录：直接触发 Google 登录
     if (!loggedIn) {
+      track("signin_click", { market_id: newsId ?? card.slug, props: { from: "feedcard" } });
       const supabase = createClient();
       if (supabase) {
         await supabase.auth.signInWithOAuth({
@@ -102,6 +105,11 @@ export default function FeedCard({
       setError(err.message.includes("insufficient") ? t("积分不足") : t("下注失败"));
       return;
     }
+    track("quickbet", {
+      market_id: newsId ?? card.slug,
+      market_kind: card.genMarketId ? "generated" : "polymarket",
+      props: { side: selected.label.toLowerCase(), stake, placement: "detail" },
+    });
     setDone(`${labelText(selected)} · ${stake}${t("分")} @ ${pct(selected.probability)}`);
     setSelected(null);
     router.refresh(); // 刷新头部积分
@@ -261,9 +269,16 @@ export default function FeedCard({
             <span className="text-gray-400 dark:text-gray-500">{t("你怎么看？点一下用积分表态")}</span>
           )}
           <a
-            href={card.polymarketUrl}
+            href={outboundMarketUrl(card)}
             target="_blank"
             rel="noreferrer"
+            onClick={() =>
+              track("outbound_market", {
+                market_id: newsId ?? card.slug,
+                market_kind: card.genMarketId ? "generated" : "polymarket",
+                props: { target: card.polymarketUrl },
+              })
+            }
             className="text-gray-300 dark:text-gray-600 hover:text-gray-500"
           >
             {t("来源 ↗")}

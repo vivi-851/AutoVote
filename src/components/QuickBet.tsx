@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n";
+import { track } from "@/lib/track";
 import type { FeedCard, Outcome } from "@/lib/polymarket";
 
 const QUICK_STAKE = 100; // feed 内一键表态的默认下注额
@@ -48,6 +49,7 @@ export default function QuickBet({
     if (!enabled) return;
 
     if (!loggedIn) {
+      track("signin_click", { market_id: newsId, props: { from: "quickbet" } });
       const supabase = createClient();
       await supabase?.auth.signInWithOAuth({
         provider: "google",
@@ -80,6 +82,11 @@ export default function QuickBet({
       setErr(error.message.includes("insufficient") ? t("积分不足") : t("下注失败"));
       return;
     }
+    track("quickbet", {
+      market_id: newsId,
+      market_kind: market!.genMarketId ? "generated" : "polymarket",
+      props: { side: o.label.toLowerCase(), stake: QUICK_STAKE, placement: "feed" },
+    });
     setDone(`${labelText(o)} · ${QUICK_STAKE}${t("分")}`);
     router.refresh();
   }
