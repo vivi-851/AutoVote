@@ -83,7 +83,7 @@
 | `DEEPSEEK_API_KEY` | DeepSeek 服务端密钥（AI 生成/结算盘口）。可用 `LLM_BASE_URL`/`LLM_MODEL` 覆盖换其他 OpenAI 兼容模型 | AI 盘口 |
 
 未配置任一项时对应功能优雅降级（登录显示"待配置"、新闻回退策划内容、无 AI 盘口），不影响其余部分。
-数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）。
+数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）、`supabase/leaderboard.sql`（积分榜）。
 
 埋点字段字典与漏斗 SQL 见 [`docs/analytics.md`](docs/analytics.md)。
 
@@ -118,6 +118,7 @@ src/
   components/
     NewsFeed / NewsCard       # 信息流（tab / 视频 / 社交 / 无限滚动）+ 卡片
     FeaturedRail / QuickBet   # 精选横滑卡 / feed 内一键下注
+    RightRail                 # PC 右栏：积分榜 + 热门盘口（移动端不渲染）
     FeedCard                  # 详情页完整可下注盘口（含 AI 盘口 AMM）
     ClosePositionButton       # 卖出/平仓
     YouTubeLite / PortfolioChart / AuthButton
@@ -139,6 +140,7 @@ supabase/
   trading.sql                 # bets 平仓字段 + sell_bet RPC
   events.sql                  # 漏斗埋点事件表（append-only + RLS）
   admin.sql                   # is_admin 标记 + admin_metrics 看板 RPC
+  leaderboard.sql             # 积分榜 RPC（SECURITY DEFINER 绕过 profiles RLS）
 docs/
   analytics.md                # 埋点字段字典 + 漏斗 SQL
 vercel.json                   # 每日 cron：生成(08:00) / 结算(08:30)

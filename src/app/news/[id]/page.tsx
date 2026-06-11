@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getFeedEntry } from "@/lib/feed";
 import FeedCard from "@/components/FeedCard";
@@ -68,12 +69,23 @@ export default async function NewsDetail({
             {news.headline}
           </h1>
 
-          {/* 视频（可播放） */}
-          {news.video && (
+          {/* 媒体置顶：视频（可播放）/ GNews 新闻图 */}
+          {news.video ? (
             <div className="mt-3">
               <YouTubeLite id={news.video.youtubeId} channel={news.video.channel} />
             </div>
-          )}
+          ) : news.image ? (
+            <div className="mt-3 relative aspect-video rounded-xl overflow-hidden bg-gray-100 dark:bg-gray-800">
+              <Image
+                src={news.image}
+                alt=""
+                fill
+                sizes="(max-width: 640px) 100vw, 600px"
+                className="object-cover"
+                unoptimized
+              />
+            </div>
+          ) : null}
 
           <p className="mt-2 text-[14px] leading-relaxed text-gray-600 dark:text-gray-300">
             {news.summary}

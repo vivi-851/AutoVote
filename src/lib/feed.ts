@@ -100,6 +100,7 @@ function articleToNews(market: FeedCard, art: GNewsArticle): NewsItem {
     marketSlug: market.slug,
     marketCategory: market.category,
     originalUrl: art.url,
+    image: art.image || null, // 仅 GNews 新闻图；无图时组件回退 market.image / 纯文字
     likes: pseudoCount(market.slug, 200, 4000),
     comments: pseudoCount(market.slug + "c", 20, 320),
   };

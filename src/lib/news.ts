@@ -19,6 +19,7 @@ export interface NewsItem {
   marketSlug: string; // 关联的 Polymarket event slug
   marketCategory: string; // 传给盘口卡的分类标签（Politics/Hot）
   originalUrl: string; // 原文来源
+  image?: string | null; // GNews 新闻配图（媒体置顶大图）；无则组件回退 market.image / 纯文字
   video?: NewsVideo; // 有则信息流是视频卡，无则用市场配图
   likes: number; // 社交互动数（原型 mock）
   comments: number;

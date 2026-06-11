@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { NewsItem } from "@/lib/news";
 import type { FeedCard } from "@/lib/polymarket";
 import YouTubeLite from "./YouTubeLite";
@@ -47,6 +47,8 @@ export default function NewsCard({
   const hasVideo = !!news.video;
   const ref = useRef<HTMLElement | null>(null);
   const kind = marketKind(news, market);
+  const [heroFailed, setHeroFailed] = useState(false);
+  const newsImage = news.image && !heroFailed ? news.image : null;
 
   // 曝光埋点：卡片首次进入视口时上报一次
   useEffect(() => {
@@ -70,12 +72,42 @@ export default function NewsCard({
       ref={ref}
       className="rounded-2xl border border-black/8 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden hover:shadow-md transition"
     >
-      {/* 视频卡：顶部大图，点击播放（不跳转） */}
-      {hasVideo && (
-        <div className="px-3 pt-3">
-          <YouTubeLite id={news.video!.youtubeId} channel={news.video!.channel} />
+      {/* 媒体置顶：视频 > GNews 新闻图 > Polymarket 盘口图 > 纯文字（无媒体块） */}
+      {hasVideo ? (
+        <YouTubeLite
+          id={news.video!.youtubeId}
+          channel={news.video!.channel}
+          rounded="rounded-none"
+        />
+      ) : newsImage ? (
+        <div className="relative aspect-video bg-gray-100 dark:bg-gray-800">
+          <Image
+            src={newsImage}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 600px"
+            className="object-cover"
+            unoptimized
+            onError={() => setHeroFailed(true)}
+          />
         </div>
-      )}
+      ) : market?.image ? (
+        // 盘口图多为方形 logo：磨砂底 + 居中 contain，不被 16:9 裁烂
+        <div className="relative aspect-video overflow-hidden bg-gray-100 dark:bg-gray-800">
+          <div
+            className="absolute inset-0 bg-cover bg-center blur-xl scale-110 opacity-40"
+            style={{ backgroundImage: `url(${market.image})` }}
+          />
+          <Image
+            src={market.image}
+            alt=""
+            fill
+            sizes="(max-width: 640px) 100vw, 600px"
+            className="object-contain p-6"
+            unoptimized
+          />
+        </div>
+      ) : null}
 
       {/* 文本区：点击进详情 */}
       <Link
@@ -111,26 +143,12 @@ export default function NewsCard({
           )}
         </span>
 
-        <div className="flex gap-3">
-          <div className="min-w-0 flex-1">
-            <h2 className="font-semibold leading-snug text-[15px] text-gray-900 dark:text-gray-100">
-              {news.headline}
-            </h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3">
-              {news.summary}
-            </p>
-          </div>
-          {!hasVideo && market?.image && (
-            <Image
-              src={market.image}
-              alt=""
-              width={76}
-              height={76}
-              className="w-[76px] h-[76px] rounded-xl object-cover shrink-0"
-              unoptimized
-            />
-          )}
-        </div>
+        <h2 className="font-semibold leading-snug text-[15px] text-gray-900 dark:text-gray-100">
+          {news.headline}
+        </h2>
+        <p className="mt-1 text-[13px] leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3">
+          {news.summary}
+        </p>
       </Link>
 
       {/* 内嵌盘口：feed 内一键表态（不跳详情） */}
