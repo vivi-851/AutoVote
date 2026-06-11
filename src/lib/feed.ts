@@ -225,6 +225,11 @@ export async function getFeedEntry(id: string): Promise<FeedEntry | null> {
     }
     const arts = await searchNews(buildQuery(market.title), 1);
     const news = arts[0] ? articleToNews(market, arts[0]) : marketOnlyNews(market);
+    // 详情页也配视频：同 query 命中同一缓存 → 与 feed 是同一个视频
+    if (youtubeEnabled) {
+      const vid = await searchVideo(`${buildQuery(market.title)} news`);
+      if (vid) news.video = vid;
+    }
     return { news, market };
   }
 
