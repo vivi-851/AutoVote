@@ -1,8 +1,16 @@
 @import "tailwindcss";
 
+/* 深色模式用 class 策略（.dark 在 <html> 上）以支持 浅/深/跟随系统 */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
-  --background: #ffffff;
+  --background: #fafafa;
   --foreground: #171717;
+}
+
+.dark {
+  --background: #0b0d12;
+  --foreground: #e7e9ee;
 }
 
 @theme inline {

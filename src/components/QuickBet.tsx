@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/lib/i18n";
 import type { FeedCard, Outcome } from "@/lib/polymarket";
 
 const QUICK_STAKE = 100; // feed 内一键表态的默认下注额
@@ -24,20 +25,21 @@ export default function QuickBet({
   enabled: boolean;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [busy, setBusy] = useState<string | null>(null);
   const [done, setDone] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   if (!market) {
     return (
-      <div className="mt-3 rounded-xl border border-dashed border-black/10 px-3 py-2.5 text-xs text-gray-400">
-        盘口暂不可用
+      <div className="mt-3 rounded-xl border border-dashed border-black/10 dark:border-white/10 px-3 py-2.5 text-xs text-gray-400 dark:text-gray-500">
+        {t("盘口暂不可用")}
       </div>
     );
   }
 
   function labelText(o: Outcome) {
-    if (market!.isBinary) return o.label.toLowerCase() === "yes" ? "会发生" : "不会";
+    if (market!.isBinary) return o.label.toLowerCase() === "yes" ? t("会发生") : t("不会");
     return o.label;
   }
 
@@ -75,23 +77,25 @@ export default function QuickBet({
         });
     setBusy(null);
     if (error) {
-      setErr(error.message.includes("insufficient") ? "积分不足" : "下注失败");
+      setErr(error.message.includes("insufficient") ? t("积分不足") : t("下注失败"));
       return;
     }
-    setDone(`已押 ${QUICK_STAKE} 分「${labelText(o)}」`);
+    setDone(`${labelText(o)} · ${QUICK_STAKE}${t("分")}`);
     router.refresh();
   }
 
   const top = market.outcomes.slice(0, 2);
 
   return (
-    <div className="mt-3 rounded-xl border border-black/8 bg-gray-50/70 px-3 py-2.5">
+    <div className="mt-3 rounded-xl border border-black/8 dark:border-white/10 bg-gray-50/70 dark:bg-white/5 px-3 py-2.5">
       <div className="flex items-center justify-between mb-2">
-        <span className="text-[11px] font-medium text-gray-500 truncate">
-          📊 相关盘口 · {market.title}
+        <span className="text-[11px] font-medium text-gray-500 dark:text-gray-400 truncate">
+          📊 {t("相关盘口")} · {market.title}
         </span>
         {enabled && (
-          <span className="text-[10px] text-gray-400 shrink-0 ml-2">点选项押 {QUICK_STAKE} 分</span>
+          <span className="text-[10px] text-gray-400 dark:text-gray-500 shrink-0 ml-2">
+            {QUICK_STAKE}{t("分")}
+          </span>
         )}
       </div>
 
@@ -107,11 +111,11 @@ export default function QuickBet({
                 disabled={busy === key}
                 className={`flex items-center justify-between rounded-lg px-2.5 py-1.5 text-[13px] font-medium ring-1 transition disabled:opacity-60 ${
                   isYes
-                    ? "bg-green-50 text-green-700 ring-green-200 hover:bg-green-100 active:bg-green-600 active:text-white"
-                    : "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100 active:bg-red-600 active:text-white"
+                    ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 ring-green-200 dark:ring-green-500/30 hover:bg-green-100 active:bg-green-600 active:text-white"
+                    : "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 ring-red-200 dark:ring-red-500/30 hover:bg-red-100 active:bg-red-600 active:text-white"
                 }`}
               >
-                <span>{isYes ? "会发生" : "不会"}</span>
+                <span>{isYes ? t("会发生") : t("不会")}</span>
                 <span className="tabular-nums">{pct(o.probability)}</span>
               </button>
             );
@@ -126,7 +130,7 @@ export default function QuickBet({
                 key={o.marketId}
                 onClick={() => bet(o)}
                 disabled={busy === key}
-                className="w-full flex items-center gap-2 text-[13px] text-gray-700 rounded-lg px-2 py-1.5 ring-1 ring-transparent hover:bg-white hover:ring-black/10 transition disabled:opacity-60"
+                className="w-full flex items-center gap-2 text-[13px] text-gray-700 dark:text-gray-200 rounded-lg px-2 py-1.5 ring-1 ring-transparent hover:bg-white dark:hover:bg-white/10 hover:ring-black/10 dark:hover:ring-white/15 transition disabled:opacity-60"
               >
                 <span className="flex-1 truncate text-left">{o.label}</span>
                 <div className="w-16 h-1.5 rounded-full bg-black/10 overflow-hidden">
@@ -141,16 +145,16 @@ export default function QuickBet({
 
       <div className="mt-2 flex items-center justify-between">
         {done ? (
-          <span className="text-[12px] font-medium text-green-600">✓ {done}</span>
+          <span className="text-[12px] font-medium text-green-600 dark:text-green-400">✓ {done}</span>
         ) : err ? (
           <span className="text-[12px] font-medium text-red-500">{err}</span>
         ) : !enabled ? (
-          <span className="text-[12px] text-gray-400">登录后可一键表态</span>
+          <span className="text-[12px] text-gray-400 dark:text-gray-500">{t("登录后可一键表态")}</span>
         ) : (
-          <span className="text-[12px] text-gray-400">{loggedIn ? "点上方选项一键下注" : "点选项即可登录并下注"}</span>
+          <span className="text-[12px] text-gray-400 dark:text-gray-500">{loggedIn ? t("点上方选项一键下注") : t("点选项即可登录并下注")}</span>
         )}
-        <Link href={`/news/${newsId}`} className="text-[12px] font-medium text-indigo-600 shrink-0 ml-2">
-          {done ? "去加注 →" : "完整盘口 →"}
+        <Link href={`/news/${newsId}`} className="text-[12px] font-medium text-indigo-600 dark:text-indigo-400 shrink-0 ml-2">
+          {done ? t("去加注 →") : t("完整盘口 →")}
         </Link>
       </div>
     </div>

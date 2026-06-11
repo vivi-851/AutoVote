@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import NewsCard from "./NewsCard";
 import { NEWS_TABS } from "@/lib/news";
 import { loadMoreFeed } from "@/app/actions";
+import { useT } from "@/lib/i18n";
 import type { FeedEntry } from "@/lib/feed";
 
 export type { FeedEntry };
@@ -19,6 +20,7 @@ export default function NewsFeed({
   loggedIn: boolean;
   enabled: boolean;
 }) {
+  const { t } = useT();
   const [tab, setTab] = useState<string>("推荐");
   const [visible, setVisible] = useState(PAGE);
 
@@ -97,19 +99,19 @@ export default function NewsFeed({
     <>
       {/* 分类 tab */}
       <div className="flex gap-1.5 overflow-x-auto pb-1 -mx-1 px-1">
-        {NEWS_TABS.map((t) => {
-          const active = t === tab;
+        {NEWS_TABS.map((tabValue) => {
+          const active = tabValue === tab;
           return (
             <button
-              key={t}
-              onClick={() => setTab(t)}
+              key={tabValue}
+              onClick={() => setTab(tabValue)}
               className={`shrink-0 px-3.5 py-1.5 rounded-full text-[13px] font-medium transition ${
                 active
-                  ? "bg-gray-900 text-white"
-                  : "bg-white text-gray-500 ring-1 ring-black/8 hover:text-gray-800"
+                  ? "bg-gray-900 text-white dark:bg-gray-100 dark:text-gray-900"
+                  : "bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400 ring-1 ring-black/8 dark:ring-white/10 hover:text-gray-800 dark:hover:text-gray-100"
               }`}
             >
-              {t}
+              {t(tabValue)}
             </button>
           );
         })}
@@ -119,7 +121,7 @@ export default function NewsFeed({
       <div className="mt-4 space-y-3">
         {shown.length === 0 ? (
           <div className="text-center text-gray-400 py-16 text-sm">
-            该分类暂时没有内容
+            {t("该分类暂时没有内容")}
           </div>
         ) : (
           displayed.map((e) => (
@@ -144,10 +146,10 @@ export default function NewsFeed({
             className="w-full py-5 flex items-center justify-center gap-2 text-[13px] text-gray-500 hover:text-gray-800 transition disabled:opacity-60"
           >
             <span className="w-3.5 h-3.5 rounded-full border-2 border-gray-300 border-t-gray-500 animate-spin" />
-            {loadingMore ? "加载中…" : "加载更多"}
+            {loadingMore ? t("加载中…") : t("加载更多")}
           </button>
         ) : (
-          <div className="py-6 text-center text-xs text-gray-300">没有更多了</div>
+          <div className="py-6 text-center text-xs text-gray-300 dark:text-gray-600">{t("没有更多了")}</div>
         ))}
     </>
   );

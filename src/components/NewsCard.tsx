@@ -1,9 +1,12 @@
+"use client";
+
 import Link from "next/link";
 import Image from "next/image";
 import type { NewsItem } from "@/lib/news";
 import type { FeedCard } from "@/lib/polymarket";
 import YouTubeLite from "./YouTubeLite";
 import QuickBet from "./QuickBet";
+import { useT } from "@/lib/i18n";
 
 function fmtCount(n: number) {
   if (n >= 1000) return `${(n / 1000).toFixed(1)}k`;
@@ -11,11 +14,11 @@ function fmtCount(n: number) {
 }
 
 const catColor: Record<string, string> = {
-  政治: "bg-blue-50 text-blue-600 ring-blue-200",
-  财经: "bg-emerald-50 text-emerald-600 ring-emerald-200",
-  加密: "bg-amber-50 text-amber-600 ring-amber-200",
-  体育: "bg-violet-50 text-violet-600 ring-violet-200",
-  科技: "bg-cyan-50 text-cyan-600 ring-cyan-200",
+  政治: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-300 ring-blue-200 dark:ring-blue-500/30",
+  财经: "bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-300 ring-emerald-200 dark:ring-emerald-500/30",
+  加密: "bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-300 ring-amber-200 dark:ring-amber-500/30",
+  体育: "bg-violet-50 dark:bg-violet-500/15 text-violet-600 dark:text-violet-300 ring-violet-200 dark:ring-violet-500/30",
+  科技: "bg-cyan-50 dark:bg-cyan-500/15 text-cyan-600 dark:text-cyan-300 ring-cyan-200 dark:ring-cyan-500/30",
 };
 
 export default function NewsCard({
@@ -29,10 +32,11 @@ export default function NewsCard({
   loggedIn: boolean;
   enabled: boolean;
 }) {
+  const { t } = useT();
   const hasVideo = !!news.video;
 
   return (
-    <article className="rounded-2xl border border-black/8 bg-white shadow-sm overflow-hidden hover:shadow-md transition">
+    <article className="rounded-2xl border border-black/8 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden hover:shadow-md transition">
       {/* 视频卡：顶部大图，点击播放（不跳转） */}
       {hasVideo && (
         <div className="px-3 pt-3">
@@ -47,33 +51,33 @@ export default function NewsCard({
             {news.source.slice(0, 1)}
           </div>
           <div className="min-w-0 flex items-center gap-1.5">
-            <span className="text-[13px] font-semibold text-gray-800">{news.source}</span>
-            <span className="text-[12px] text-gray-400 truncate">{news.handle}</span>
+            <span className="text-[13px] font-semibold text-gray-800 dark:text-gray-100">{news.source}</span>
+            <span className="text-[12px] text-gray-400 dark:text-gray-500 truncate">{news.handle}</span>
           </div>
-          <span className="ml-auto text-[11px] text-gray-400 shrink-0">{news.publishedAgo}</span>
+          <span className="ml-auto text-[11px] text-gray-400 dark:text-gray-500 shrink-0">{news.publishedAgo}</span>
         </div>
 
         <span className="inline-flex items-center gap-1.5 mb-2">
           <span
             className={`px-2 py-0.5 rounded-full ring-1 text-[11px] font-medium ${
-              catColor[news.category] ?? "bg-gray-50 text-gray-600 ring-gray-200"
+              catColor[news.category] ?? "bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-300 ring-gray-200 dark:ring-white/15"
             }`}
           >
-            {news.category}
+            {t(news.category)}
           </span>
           {news.generated && (
-            <span className="px-2 py-0.5 rounded-full ring-1 text-[11px] font-medium bg-indigo-50 text-indigo-600 ring-indigo-200">
-              🤖 AI 盘口
+            <span className="px-2 py-0.5 rounded-full ring-1 text-[11px] font-medium bg-indigo-50 dark:bg-indigo-500/15 text-indigo-600 dark:text-indigo-300 ring-indigo-200 dark:ring-indigo-500/30">
+              🤖 {t("AI 盘口")}
             </span>
           )}
         </span>
 
         <div className="flex gap-3">
           <div className="min-w-0 flex-1">
-            <h2 className="font-semibold leading-snug text-[15px] text-gray-900">
+            <h2 className="font-semibold leading-snug text-[15px] text-gray-900 dark:text-gray-100">
               {news.headline}
             </h2>
-            <p className="mt-1 text-[13px] leading-relaxed text-gray-500 line-clamp-3">
+            <p className="mt-1 text-[13px] leading-relaxed text-gray-500 dark:text-gray-400 line-clamp-3">
               {news.summary}
             </p>
           </div>
@@ -96,7 +100,7 @@ export default function NewsCard({
       </div>
 
       {/* 互动行 */}
-      <div className="flex items-center gap-5 px-4 sm:px-5 py-3 mt-1 text-gray-400 text-[13px]">
+      <div className="flex items-center gap-5 px-4 sm:px-5 py-3 mt-1 text-gray-400 dark:text-gray-500 text-[13px]">
         <span className="flex items-center gap-1.5">
           <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current stroke-[1.8]">
             <path d="M12 21s-7.5-4.6-10-9.3C.4 8.4 1.9 4.9 5.2 4.5c2-.2 3.6 1 4.8 2.6C11.2 5.5 12.8 4.3 14.8 4.5c3.3.4 4.8 3.9 3.2 7.2C19.5 16.4 12 21 12 21z" />
@@ -113,7 +117,7 @@ export default function NewsCard({
           <svg viewBox="0 0 24 24" className="w-4 h-4 fill-none stroke-current stroke-[1.8]">
             <path d="M4 12v7a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-7M16 6l-4-4-4 4M12 2v13" />
           </svg>
-          分享
+          {t("分享")}
         </span>
       </div>
     </article>

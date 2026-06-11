@@ -5,6 +5,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import type { FeedCard as FeedCardData, Outcome } from "@/lib/polymarket";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/lib/i18n";
 
 function pct(p: number) {
   return `${Math.round(p * 100)}%`;
@@ -25,8 +26,8 @@ function fmtEnd(iso: string | null) {
 }
 
 const catStyle: Record<string, string> = {
-  Politics: "bg-blue-50 text-blue-600 ring-blue-200",
-  Hot: "bg-orange-50 text-orange-600 ring-orange-200",
+  Politics: "bg-blue-50 dark:bg-blue-500/15 text-blue-600 dark:text-blue-300 ring-blue-200 dark:ring-blue-500/30",
+  Hot: "bg-orange-50 dark:bg-orange-500/15 text-orange-600 dark:text-orange-300 ring-orange-200 dark:ring-orange-500/30",
 };
 
 const STAKES = [50, 100, 500];
@@ -43,6 +44,7 @@ export default function FeedCard({
   enabled?: boolean;
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [selected, setSelected] = useState<Outcome | null>(null);
   const [stake, setStake] = useState<number>(100);
   const [busy, setBusy] = useState(false);
@@ -97,36 +99,38 @@ export default function FeedCard({
         });
     setBusy(false);
     if (err) {
-      setError(err.message.includes("insufficient") ? "积分不足" : "下注失败，请重试");
+      setError(err.message.includes("insufficient") ? t("积分不足") : t("下注失败"));
       return;
     }
-    setDone(`已用 ${stake} 分押注「${labelText(selected)}」@ ${pct(selected.probability)}`);
+    setDone(`${labelText(selected)} · ${stake}${t("分")} @ ${pct(selected.probability)}`);
     setSelected(null);
     router.refresh(); // 刷新头部积分
   }
 
   function labelText(o: Outcome) {
-    if (card.isBinary) return o.label.toLowerCase() === "yes" ? "会发生" : "不会";
+    if (card.isBinary) return o.label.toLowerCase() === "yes" ? t("会发生") : t("不会");
     return o.label;
   }
 
   const potential = selected ? Math.round(stake / selected.probability) : 0;
 
   return (
-    <article className="rounded-2xl border border-black/8 bg-white shadow-sm overflow-hidden">
+    <article className="rounded-2xl border border-black/8 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm overflow-hidden">
       <div className="p-4 sm:p-5">
         {/* 头部 */}
         <div className="flex items-center gap-2 text-xs mb-3">
           <span
             className={`px-2 py-0.5 rounded-full ring-1 font-medium ${
-              catStyle[card.category] ?? "bg-gray-50 text-gray-600 ring-gray-200"
+              catStyle[card.category] ?? "bg-gray-50 dark:bg-white/10 text-gray-600 dark:text-gray-300 ring-gray-200 dark:ring-white/15"
             }`}
           >
-            {card.category === "Politics" ? "政治" : "热点"}
+            {card.category === "Politics" ? t("政治") : t("热点")}
           </span>
-          <span className="text-gray-400">{fmtVolume(card.volume)} 成交</span>
+          {card.volume > 0 && (
+            <span className="text-gray-400 dark:text-gray-500">{fmtVolume(card.volume)}</span>
+          )}
           {fmtEnd(card.endDate) && (
-            <span className="text-gray-400">· 截止 {fmtEnd(card.endDate)}</span>
+            <span className="text-gray-400 dark:text-gray-500">· {fmtEnd(card.endDate)}</span>
           )}
         </div>
 
@@ -143,11 +147,11 @@ export default function FeedCard({
             />
           )}
           <div className="min-w-0">
-            <h2 className="font-semibold leading-snug text-[15px] text-gray-900">
+            <h2 className="font-semibold leading-snug text-[15px] text-gray-900 dark:text-gray-100">
               {card.title}
             </h2>
             {card.description && (
-              <p className="mt-1 text-[13px] text-gray-500 line-clamp-2">{card.description}</p>
+              <p className="mt-1 text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2">{card.description}</p>
             )}
           </div>
         </div>
@@ -169,11 +173,11 @@ export default function FeedCard({
                           ? "bg-green-600 text-white ring-green-600"
                           : "bg-red-600 text-white ring-red-600"
                         : isYes
-                        ? "bg-green-50 text-green-700 ring-green-200 hover:bg-green-100"
-                        : "bg-red-50 text-red-700 ring-red-200 hover:bg-red-100"
+                        ? "bg-green-50 dark:bg-green-500/15 text-green-700 dark:text-green-300 ring-green-200 dark:ring-green-500/30 hover:bg-green-100"
+                        : "bg-red-50 dark:bg-red-500/15 text-red-700 dark:text-red-300 ring-red-200 dark:ring-red-500/30 hover:bg-red-100"
                     }`}
                   >
-                    <span>{isYes ? "会发生" : "不会"}</span>
+                    <span>{isYes ? t("会发生") : t("不会")}</span>
                     <span className="tabular-nums">{pct(o.probability)}</span>
                   </button>
                 );
@@ -190,7 +194,7 @@ export default function FeedCard({
                     className={`w-full flex items-center gap-3 rounded-xl px-3 py-2 text-sm ring-1 transition ${
                       active
                         ? "bg-indigo-600 text-white ring-indigo-600"
-                        : "bg-gray-50 text-gray-700 ring-gray-200 hover:bg-gray-100"
+                        : "bg-gray-50 dark:bg-white/5 text-gray-700 dark:text-gray-200 ring-gray-200 dark:ring-white/10 hover:bg-gray-100 dark:hover:bg-white/10"
                     }`}
                   >
                     <span className="flex-1 text-left truncate">{o.label}</span>
@@ -212,9 +216,9 @@ export default function FeedCard({
 
         {/* 下注面板 */}
         {selected && enabled && loggedIn && (
-          <div className="mt-3 rounded-xl bg-gray-50 ring-1 ring-black/8 p-3">
-            <div className="text-[13px] text-gray-600 mb-2">
-              用积分押注「<b>{labelText(selected)}</b>」@ {pct(selected.probability)}
+          <div className="mt-3 rounded-xl bg-gray-50 dark:bg-white/5 ring-1 ring-black/8 dark:ring-white/10 p-3">
+            <div className="text-[13px] text-gray-600 dark:text-gray-300 mb-2">
+              <b>{labelText(selected)}</b> @ {pct(selected.probability)}
             </div>
             <div className="flex items-center gap-2 mb-2">
               {STAKES.map((s) => (
@@ -223,8 +227,8 @@ export default function FeedCard({
                   onClick={() => setStake(s)}
                   className={`flex-1 rounded-lg py-1.5 text-[13px] font-medium ring-1 transition ${
                     stake === s
-                      ? "bg-gray-900 text-white ring-gray-900"
-                      : "bg-white text-gray-600 ring-black/10 hover:bg-gray-100"
+                      ? "bg-gray-900 text-white ring-gray-900 dark:bg-gray-100 dark:text-gray-900 dark:ring-gray-100"
+                      : "bg-white dark:bg-gray-800 text-gray-600 dark:text-gray-300 ring-black/10 dark:ring-white/10 hover:bg-gray-100 dark:hover:bg-gray-700"
                   }`}
                 >
                   {s}
@@ -232,44 +236,37 @@ export default function FeedCard({
               ))}
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-[12px] text-gray-400">
-                押中约可得 <b className="text-green-600">{potential}</b> 分
+              <span className="text-[12px] text-gray-400 dark:text-gray-500">
+                → <b className="text-green-600 dark:text-green-400">{potential}</b>{t("分")}
               </span>
               <button
                 onClick={confirmBet}
                 disabled={busy}
                 className="rounded-lg bg-indigo-600 text-white text-[13px] font-medium px-4 py-1.5 hover:bg-indigo-500 transition disabled:opacity-60"
               >
-                {busy ? "下注中…" : "确认下注"}
+                {busy ? t("下注中…") : t("确认下注")}
               </button>
             </div>
             {error && <div className="mt-2 text-[12px] text-red-500">{error}</div>}
           </div>
         )}
 
-        {/* 未配置后端的占位提示 */}
-        {selected && !enabled && (
-          <div className="mt-3 text-[12px] text-gray-400">
-            积分下注待接入后端（配置 Supabase 后开放）
-          </div>
-        )}
-
         {/* 底部状态 */}
         <div className="mt-3 flex items-center justify-between text-xs">
           {done ? (
-            <span className="text-green-600 font-medium">✓ {done}</span>
+            <span className="text-green-600 dark:text-green-400 font-medium">✓ {done}</span>
           ) : !loggedIn && enabled ? (
-            <span className="text-gray-400">点选项即可登录并用积分下注</span>
+            <span className="text-gray-400 dark:text-gray-500">{t("点选项即可登录并下注")}</span>
           ) : (
-            <span className="text-gray-400">你怎么看？点一下用积分表态</span>
+            <span className="text-gray-400 dark:text-gray-500">{t("你怎么看？点一下用积分表态")}</span>
           )}
           <a
             href={card.polymarketUrl}
             target="_blank"
             rel="noreferrer"
-            className="text-gray-300 hover:text-gray-500"
+            className="text-gray-300 dark:text-gray-600 hover:text-gray-500"
           >
-            来源 ↗
+            {t("来源 ↗")}
           </a>
         </div>
       </div>

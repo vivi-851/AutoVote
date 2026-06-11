@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
+import { useT } from "@/lib/i18n";
 
 // 平仓按钮：按当前价卖出持仓、兑现盈亏。二次点击确认。
 export default function ClosePositionButton({
@@ -15,6 +16,7 @@ export default function ClosePositionButton({
   proceeds: number; // 预计到账积分（估算）
 }) {
   const router = useRouter();
+  const { t } = useT();
   const [armed, setArmed] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -31,7 +33,7 @@ export default function ClosePositionButton({
     });
     setBusy(false);
     if (error) {
-      setErr("平仓失败");
+      setErr(t("平仓失败"));
       return;
     }
     router.refresh();
@@ -44,20 +46,20 @@ export default function ClosePositionButton({
       <button
         onClick={close}
         disabled={busy}
-        className="rounded-lg bg-gray-900 text-white text-[12px] font-medium px-3 py-1 hover:bg-gray-700 disabled:opacity-60"
+        className="rounded-lg bg-gray-900 dark:bg-gray-100 text-white dark:text-gray-900 text-[12px] font-medium px-3 py-1 hover:bg-gray-700 dark:hover:bg-white disabled:opacity-60"
       >
-        {busy ? "平仓中…" : `确认平仓 ~${proceeds} 分`}
+        {busy ? t("平仓中…") : `${t("平仓")} ~${proceeds}${t("分")}`}
       </button>
-      <button onClick={() => setArmed(false)} className="text-[12px] text-gray-400">
-        取消
+      <button onClick={() => setArmed(false)} className="text-[12px] text-gray-400 dark:text-gray-500">
+        {t("取消")}
       </button>
     </span>
   ) : (
     <button
       onClick={() => setArmed(true)}
-      className="rounded-lg ring-1 ring-black/15 text-[12px] font-medium px-3 py-1 text-gray-700 hover:bg-gray-50"
+      className="rounded-lg ring-1 ring-black/15 dark:ring-white/15 text-[12px] font-medium px-3 py-1 text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-white/10"
     >
-      平仓
+      {t("平仓")}
     </button>
   );
 }

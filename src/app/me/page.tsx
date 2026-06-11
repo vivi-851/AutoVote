@@ -6,10 +6,14 @@ import { getMarketsBySlugs } from "@/lib/polymarket";
 import { buildPortfolioSeries, type Position } from "@/lib/portfolio";
 import { getGenMarketsByIds, genPriceYes } from "@/lib/generated";
 import AuthButton from "@/components/AuthButton";
+import SettingsControl from "@/components/SettingsControl";
 import PortfolioChart from "@/components/PortfolioChart";
 import ClosePositionButton from "@/components/ClosePositionButton";
+import { getServerT } from "@/lib/i18n-server";
 
 export const dynamic = "force-dynamic";
+
+type T = (zh: string) => string;
 
 interface BetRow {
   id: string;
@@ -28,15 +32,18 @@ interface BetRow {
   proceeds: number | null;
 }
 
-function Shell({ children }: { children: React.ReactNode }) {
+function Shell({ t, children }: { t: T; children: React.ReactNode }) {
   return (
-    <main className="min-h-full bg-[#fafafa]">
-      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 border-b border-black/5">
+    <main className="min-h-full bg-background">
+      <header className="sticky top-0 z-10 backdrop-blur bg-white/80 dark:bg-gray-900/80 border-b border-black/5 dark:border-white/10">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">
-          <Link href="/" className="text-gray-500 hover:text-gray-900 text-sm flex items-center gap-1">
-            <span className="text-lg leading-none">‹</span> 返回
+          <Link href="/" className="text-gray-500 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white text-sm flex items-center gap-1">
+            <span className="text-lg leading-none">‹</span> {t("返回")}
           </Link>
-          <span className="ml-auto text-xs text-gray-400">我的预测</span>
+          <div className="ml-auto flex items-center gap-1">
+            <SettingsControl />
+            <span className="text-xs text-gray-400 ml-1">{t("我的预测")}</span>
+          </div>
         </div>
       </header>
       <div className="max-w-xl mx-auto px-4 py-5">{children}</div>
@@ -45,11 +52,12 @@ function Shell({ children }: { children: React.ReactNode }) {
 }
 
 export default async function MyPredictions() {
+  const { t } = await getServerT();
   if (!supabaseEnabled) {
     return (
-      <Shell>
+      <Shell t={t}>
         <div className="text-center text-gray-400 py-20 text-sm">
-          账户系统待接入 Supabase 后开放
+          {t("账户系统待接入 Supabase 后开放")}
         </div>
       </Shell>
     );
@@ -58,9 +66,9 @@ export default async function MyPredictions() {
   const profile = await getProfile();
   if (!profile) {
     return (
-      <Shell>
+      <Shell t={t}>
         <div className="text-center py-20">
-          <p className="text-sm text-gray-500 mb-4">登录后查看你的预测与积分</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">{t("登录后查看你的预测与积分")}</p>
           <AuthButton profile={null} enabled={supabaseEnabled} />
         </div>
       </Shell>
@@ -144,36 +152,36 @@ export default async function MyPredictions() {
   const series = await buildPortfolioSeries(positions);
 
   return (
-    <Shell>
+    <Shell t={t}>
       {/* 概览卡 */}
-      <div className="rounded-2xl bg-white ring-1 ring-black/8 shadow-sm p-5 mb-4">
+      <div className="rounded-2xl bg-white dark:bg-gray-900 ring-1 ring-black/8 dark:ring-white/10 shadow-sm p-5 mb-4">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <div className="text-xs text-gray-400">可用积分</div>
-            <div className="text-2xl font-bold text-amber-600 tabular-nums">
+            <div className="text-xs text-gray-400 dark:text-gray-500">{t("可用积分")}</div>
+            <div className="text-2xl font-bold text-amber-600 dark:text-amber-400 tabular-nums">
               {profile.points.toLocaleString()}
             </div>
           </div>
           <AuthButton profile={profile} enabled={supabaseEnabled} />
         </div>
         <div className="grid grid-cols-3 gap-2 text-center">
-          <Stat label="持仓本金" value={Math.round(totalStaked).toLocaleString()} />
-          <Stat label="当前市值" value={Math.round(totalValue).toLocaleString()} />
+          <Stat label={t("持仓本金")} value={Math.round(totalStaked).toLocaleString()} />
+          <Stat label={t("当前市值")} value={Math.round(totalValue).toLocaleString()} />
           <Stat
-            label="浮动盈亏"
+            label={t("浮动盈亏")}
             value={`${totalPnl >= 0 ? "+" : ""}${Math.round(totalPnl).toLocaleString()}`}
-            color={totalPnl >= 0 ? "text-green-600" : "text-red-500"}
+            color={totalPnl >= 0 ? "text-green-600 dark:text-green-400" : "text-red-500"}
           />
         </div>
 
         {/* 组合市值曲线 */}
         {series.length >= 2 && (
           <div className="mt-4">
-            <div className="flex items-center justify-between text-[11px] text-gray-400 mb-1">
-              <span>持仓市值走势（近一月）</span>
+            <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 mb-1">
+              <span>{t("持仓市值走势（近一月）")}</span>
               <span className="flex items-center gap-1">
                 <span className="inline-block w-3 border-t border-dashed border-gray-400" />
-                成本线
+                {t("成本线")}
               </span>
             </div>
             <PortfolioChart series={series} cost={totalStaked} />
@@ -181,37 +189,33 @@ export default async function MyPredictions() {
         )}
       </div>
 
-      <div className="text-sm font-semibold text-gray-700 mb-2 px-1">
-        持仓 · {openRows.length}
+      <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 px-1">
+        {t("持仓")} · {openRows.length}
       </div>
       {openRows.length === 0 ? (
-        <div className="text-center text-gray-400 py-10 text-sm">
-          暂无持仓 —— 回信息流挑条新闻表个态吧
+        <div className="text-center text-gray-400 dark:text-gray-500 py-10 text-sm">
+          {t("暂无持仓 —— 回信息流挑条新闻表个态吧")}
         </div>
       ) : (
         <div className="space-y-2.5">
           {openRows.map((r) => (
-            <PositionCard key={r.id} r={r} />
+            <PositionCard key={r.id} r={r} t={t} />
           ))}
         </div>
       )}
 
       {historyRows.length > 0 && (
         <>
-          <div className="text-sm font-semibold text-gray-700 mb-2 mt-6 px-1">
-            历史 · {historyRows.length}
+          <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-2 mt-6 px-1">
+            {t("历史")} · {historyRows.length}
           </div>
           <div className="space-y-2.5">
             {historyRows.map((r) => (
-              <PositionCard key={r.id} r={r} />
+              <PositionCard key={r.id} r={r} t={t} />
             ))}
           </div>
         </>
       )}
-
-      <p className="text-center text-[11px] text-gray-300 mt-6">
-        浮动盈亏按实时价计算 · 平仓兑现已实现盈亏 · 市场结算后转为最终成绩
-      </p>
     </Shell>
   );
 }
@@ -233,32 +237,33 @@ interface PosRow {
   detailId: string | null;
 }
 
-function PositionCard({ r }: { r: PosRow }) {
+function PositionCard({ r, t }: { r: PosRow; t: T }) {
   const up = r.pnl >= 0;
   const active = !r.isClosed && !r.resolved;
+  const pricePct = `${Math.round(r.curPrice * 100)}%`;
 
   const inner = (
     <div className="flex items-start justify-between gap-3 p-3.5">
       <div className="min-w-0">
-        <div className="text-[14px] font-medium text-gray-900 truncate">
-          {r.generated && <span className="text-indigo-500">🤖 </span>}
+        <div className="text-[14px] font-medium text-gray-900 dark:text-gray-100 truncate">
+          {r.generated && <span className="text-indigo-500 dark:text-indigo-400">🤖 </span>}
           {r.market_title ?? r.market_slug}
         </div>
-        <div className="text-[12px] text-gray-500 mt-0.5">
-          押「{r.outcome_label}」· {r.stake} 分 @ {Math.round(r.entry_price * 100)}%
+        <div className="text-[12px] text-gray-500 dark:text-gray-400 mt-0.5">
+          {r.outcome_label} · {r.stake}{t("分")} @ {Math.round(r.entry_price * 100)}%
         </div>
       </div>
       <div className="text-right shrink-0">
-        <div className={`text-[15px] font-bold tabular-nums ${up ? "text-green-600" : "text-red-500"}`}>
+        <div className={`text-[15px] font-bold tabular-nums ${up ? "text-green-600 dark:text-green-400" : "text-red-500"}`}>
           {up ? "+" : ""}
           {Math.round(r.pnl)}
         </div>
-        <div className="text-[11px] text-gray-400">
+        <div className="text-[11px] text-gray-400 dark:text-gray-500">
           {r.isClosed
-            ? `已平仓 · ${Math.round(r.curPrice * 100)}%`
+            ? `${t("已平仓")} · ${pricePct}`
             : r.resolved
-            ? "已结算"
-            : `现 ${Math.round(r.curPrice * 100)}%${r.live ? "" : " · 待更新"}`}
+            ? t("已结算")
+            : `${t("现")}${pricePct}${r.live ? "" : ` · ${t("待更新")}`}`}
         </div>
       </div>
     </div>
@@ -266,12 +271,12 @@ function PositionCard({ r }: { r: PosRow }) {
 
   return (
     <div
-      className={`rounded-xl bg-white ring-1 ring-black/8 shadow-sm overflow-hidden ${
+      className={`rounded-xl bg-white dark:bg-gray-900 ring-1 ring-black/8 dark:ring-white/10 shadow-sm overflow-hidden ${
         r.isClosed ? "opacity-75" : ""
       }`}
     >
       {r.detailId ? (
-        <Link href={`/news/${r.detailId}`} className="block hover:bg-gray-50/60 transition">
+        <Link href={`/news/${r.detailId}`} className="block hover:bg-gray-50/60 dark:hover:bg-white/5 transition">
           {inner}
         </Link>
       ) : (
@@ -288,9 +293,9 @@ function PositionCard({ r }: { r: PosRow }) {
 
 function Stat({ label, value, color }: { label: string; value: string; color?: string }) {
   return (
-    <div className="rounded-xl bg-gray-50 py-2.5">
-      <div className="text-[11px] text-gray-400">{label}</div>
-      <div className={`text-[15px] font-semibold tabular-nums ${color ?? "text-gray-800"}`}>
+    <div className="rounded-xl bg-gray-50 dark:bg-white/5 py-2.5">
+      <div className="text-[11px] text-gray-400 dark:text-gray-500">{label}</div>
+      <div className={`text-[15px] font-semibold tabular-nums ${color ?? "text-gray-800 dark:text-gray-100"}`}>
         {value}
       </div>
     </div>

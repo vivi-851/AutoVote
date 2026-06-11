@@ -1,5 +1,6 @@
 import Link from "next/link";
 import type { FeedEntry } from "@/lib/feed";
+import { getServerT } from "@/lib/i18n-server";
 
 const THEMES = [
   "from-blue-500 to-indigo-600",
@@ -13,14 +14,15 @@ function pct(p: number) {
 }
 
 // 顶部「精选」横滑卡：彩色 AI 速读卡 + 盘口领先项
-export default function FeaturedRail({ entries }: { entries: FeedEntry[] }) {
+export default async function FeaturedRail({ entries }: { entries: FeedEntry[] }) {
   if (entries.length === 0) return null;
+  const { t } = await getServerT();
 
   return (
     <div className="mb-5">
       <div className="flex items-center gap-1.5 mb-2 px-0.5">
-        <span className="text-[13px] font-bold text-gray-800">🔥 精选热点</span>
-        <span className="text-[11px] text-gray-400">市场在热押的几条</span>
+        <span className="text-[13px] font-bold text-gray-800 dark:text-gray-100">🔥 {t("精选热点")}</span>
+        <span className="text-[11px] text-gray-400">{t("市场在热押的几条")}</span>
       </div>
       <div className="-mx-4 px-4 overflow-x-auto scrollbar-none">
         <div className="flex gap-3 w-max pb-1">
@@ -30,8 +32,8 @@ export default function FeaturedRail({ entries }: { entries: FeedEntry[] }) {
               top &&
               (e.market!.isBinary
                 ? top.label.toLowerCase() === "yes"
-                  ? "会发生"
-                  : "不会"
+                  ? t("会发生")
+                  : t("不会")
                 : top.label);
             return (
               <Link
@@ -42,7 +44,7 @@ export default function FeaturedRail({ entries }: { entries: FeedEntry[] }) {
                 } text-white p-4 shadow-sm hover:brightness-105 transition`}
               >
                 <div className="text-[11px] font-medium opacity-80 mb-1.5">
-                  {e.news.category} · AI 速读
+                  {t(e.news.category)} · {t("AI 速读")}
                 </div>
                 <div className="text-[14px] font-semibold leading-snug line-clamp-3 min-h-[3.6em]">
                   {e.news.headline}
