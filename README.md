@@ -118,7 +118,7 @@
 | `DEEPSEEK_API_KEY` | DeepSeek 服务端密钥（AI 生成/结算盘口）。可用 `LLM_BASE_URL`/`LLM_MODEL` 覆盖换其他 OpenAI 兼容模型 | AI 盘口 |
 
 未配置任一项时对应功能优雅降级（登录显示"待配置"、新闻回退策划内容、无 AI 盘口），不影响其余部分。
-数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）、`supabase/leaderboard.sql`（积分榜）、`supabase/rewards.sql`（**每日留存 v1**：两轨积分流水 + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章回填）、`supabase/v2.sql`（**等级 + 主题赛季**：xp 列 + 等级/特权 + 赛季表与 RPC + 名人堂，覆盖 v1 的 signin/read/resolve/daily_status/reputation_leaderboard）。
+数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）、`supabase/leaderboard.sql`（积分榜）、`supabase/rewards.sql`（**每日留存 v1**：两轨积分流水 + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章回填）、`supabase/v2.sql`（**等级 + 主题赛季**：xp 列 + 等级/特权 + 赛季表与 RPC + 名人堂，覆盖 v1 的 signin/read/resolve/daily_status/reputation_leaderboard）、`supabase/admin_retention.sql`（运营后台**留存看板** RPC：DAU/签到/阅读/任务/发放积分/等级分布/赛季参与，直读权威表）。
 
 埋点字段字典与漏斗 SQL 见 [`docs/analytics.md`](docs/analytics.md)。
 
@@ -181,6 +181,7 @@ supabase/
   trading.sql                 # bets 平仓字段 + sell_bet RPC
   events.sql                  # 漏斗埋点事件表（append-only + RLS）
   admin.sql                   # is_admin 标记 + admin_metrics 看板 RPC
+  admin_retention.sql         # 运营后台留存看板 RPC（DAU/签到/阅读/任务/发放/等级/赛季）
   leaderboard.sql             # 积分榜 RPC（SECURITY DEFINER 绕过 profiles RLS）
   rewards.sql                 # 每日留存 v1：point_ledger / daily_state / daily_claims + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章
   v2.sql                      # 等级+赛季：profiles.xp + level/特权 + seasons / season_results + 赛季榜/名人堂/close_season + XP 触发器
