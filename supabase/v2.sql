@@ -335,6 +335,8 @@ where not exists (select 1 from public.seasons where status = 'active' and now()
 -- ════════════════════════════════════════════════════
 
 -- 总战绩榜：附带 xp（前端据此算等级）
+-- 注意：v1（rewards.sql）已建过同名函数但返回列不含 xp；改返回列必须先 DROP（CREATE OR REPLACE 不能改返回类型）。
+drop function if exists public.reputation_leaderboard(integer);
 create or replace function public.reputation_leaderboard(p_limit int default 10)
 returns table(display_name text, avatar_url text, xp int, votes int, settled int, wins int, pnl int, staked int)
 language sql security definer set search_path = public stable as $$
