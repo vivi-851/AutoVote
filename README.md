@@ -40,6 +40,25 @@
 ### 现在唯一值得投入的「商业化」动作：漏斗埋点
 `信息流曝光 → 点开卡片 → QuickBet 下注 → 出站到真实市场` 这条转化漏斗，一份数据同时服务两端：对**增长**，是验证「新闻流能否把泛用户转化为预测市场参与者」这一核心论点的唯一证据；对**变现**，是将来谈返佣分成与广告报价的筹码。
 
+## 积分机制（两轨经济 + 每日留存）
+> 留存是 B 定位的第一要务。积分分两轨，把「拉回来」和「玩得好」解耦。
+
+**轨道 A · 积分（可下注余额，`profiles.points`）** —— 下注的本钱，由每日活动补充（水龙头）。
+**轨道 B · 战绩（reputation，由已结算下注推导）** —— PnL / ROI / 胜率 / 下注数，**首页战绩榜**按 PnL 排序，**不可刷**（只靠押对赚）。
+> 阅读/签到只补「钱包」让你继续玩；只有「押对」才动「排名」。水龙头同时是破产用户的回流口（积分归零的人，靠明天的签到拿到新本金才有理由回来）。
+
+### 赚积分（全部走 `SECURITY DEFINER` RPC + `point_ledger` 流水，服务端幂等封顶）
+| 动作 | 奖励 | 规则 |
+|---|---|---|
+| 每日签到 | 50→60→80→100→120→150→**300**（7 天循环） | 每天一次；昨天签过则连续 +1，漏一天清零 |
+| 阅读新闻 | +10 | 详情页停留 ≥8s，每天前 **3 篇**，每篇按盘口去重 |
+| 每日任务礼包 | +100 | 当天完成：签到 + 读 3 篇 + 表态 2 次 |
+
+单日上限约 210–310 积分（≈2–6 注），够留住、又不至于让下注「免费」而失去损失厌恶。**出站点击不发分**（避免制造假点击、污染返佣信号）。等级 / 赛季活动 → v2。
+
+- **幂等与防刷**：按用户**本地日期**去重（客户端传 `p_local_date`，服务端校验 ±1 天）；`daily_claims` 主键 `(user_id, day, kind, ref)` 兜底；读取/发放只走 RPC，表 RLS 仅可读自己。
+- **战绩统一口径**：`resolve_generated_market` 结算时给 `bets` 盖「已平仓」章（`closed/exit_price/proceeds`），与 Polymarket 卖出平仓口径一致 → 战绩榜与 `/me` 的已实现盈亏可统一计算（迁移含历史回填）。
+
 ## 核心体验
 1. **新闻信息流（首页）** — 社交流样式的真实新闻卡（图文 / YouTube 视频 / 顶部精选横滑 / 无限滚动），每条内嵌相关盘口，可**一键用积分表态**。Polymarket 盘口与 **AI 生成盘口**混排。
 2. **新闻详情** — 原文来源 + AI TL;DR 摘要 + 完整可下注盘口 + 评论区。
@@ -57,6 +76,7 @@
 | — | **交易**：买入 / 卖出 / 平仓 / 加减仓（虚拟积分） | ✅ |
 | — | **无限分页**（Polymarket 按成交量翻页 + 新闻 + AI 盘口） | ✅ |
 | — | 深浅主题 + 中/英/韩/越 多语言 | ✅ |
+| M4 | 能留：**每日留存**（两轨积分：签到 / 阅读 / 任务领分 + 首页战绩榜） | ✅ v1 |
 
 ## 数据来源与逻辑
 - **盘口**：Polymarket Gamma API（只读），政治 + 泛热点活跃市场，按成交量翻页；历史概率走 CLOB `prices-history`（组合市值曲线用）。
@@ -83,7 +103,7 @@
 | `DEEPSEEK_API_KEY` | DeepSeek 服务端密钥（AI 生成/结算盘口）。可用 `LLM_BASE_URL`/`LLM_MODEL` 覆盖换其他 OpenAI 兼容模型 | AI 盘口 |
 
 未配置任一项时对应功能优雅降级（登录显示"待配置"、新闻回退策划内容、无 AI 盘口），不影响其余部分。
-数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）、`supabase/leaderboard.sql`（积分榜）。
+数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）、`supabase/leaderboard.sql`（积分榜）、`supabase/rewards.sql`（**每日留存**：两轨积分流水 + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章回填）。
 
 埋点字段字典与漏斗 SQL 见 [`docs/analytics.md`](docs/analytics.md)。
 
@@ -118,6 +138,7 @@ src/
   components/
     NewsFeed / NewsCard       # 信息流（tab / 视频 / 社交 / 无限滚动）+ 卡片
     FeaturedRail / QuickBet   # 精选横滑卡 / feed 内一键下注
+    DailyRewards / ReadReward # 每日奖励面板（签到+任务）/ 详情页阅读奖励（隐形）
     RightRail                 # PC 右栏：积分榜 + 热门盘口（移动端不渲染）
     FeedCard                  # 详情页完整可下注盘口（含 AI 盘口 AMM）
     ClosePositionButton       # 卖出/平仓
@@ -141,6 +162,7 @@ supabase/
   events.sql                  # 漏斗埋点事件表（append-only + RLS）
   admin.sql                   # is_admin 标记 + admin_metrics 看板 RPC
   leaderboard.sql             # 积分榜 RPC（SECURITY DEFINER 绕过 profiles RLS）
+  rewards.sql                 # 每日留存：point_ledger / daily_state / daily_claims + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章
 docs/
   analytics.md                # 埋点字段字典 + 漏斗 SQL
 vercel.json                   # 每日 cron：生成(08:00) / 结算(08:30)

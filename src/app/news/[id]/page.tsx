@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { getFeedEntry } from "@/lib/feed";
 import FeedCard from "@/components/FeedCard";
 import YouTubeLite from "@/components/YouTubeLite";
+import ReadReward from "@/components/ReadReward";
 import AuthButton from "@/components/AuthButton";
 import SettingsControl from "@/components/SettingsControl";
 import { getProfile } from "@/lib/auth";
@@ -35,6 +36,9 @@ export default async function NewsDetail({
 
   return (
     <main className="min-h-full bg-background">
+      {/* 阅读奖励：登录用户停留 ≥8s 领 +10（每天前 3 篇） */}
+      <ReadReward marketId={news.id} loggedIn={!!profile} />
+
       {/* 顶部栏 */}
       <header className="sticky top-0 z-10 backdrop-blur bg-white/80 dark:bg-gray-900/80 border-b border-black/5 dark:border-white/10">
         <div className="max-w-xl mx-auto px-4 h-14 flex items-center gap-3">

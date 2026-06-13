@@ -101,6 +101,27 @@ export const DICT: Record<string, Tr> = {
     vi: "Bình luận mở sau khi có tài khoản thật",
   },
 
+  // 每日奖励 / 任务
+  "每日奖励": { en: "Daily Rewards", ko: "데일리 보상", vi: "Thưởng mỗi ngày" },
+  "连续": { en: "Streak", ko: "연속", vi: "Chuỗi" },
+  "天": { en: "d", ko: "일", vi: "ngày" },
+  "签到": { en: "Check in", ko: "출석", vi: "Điểm danh" },
+  "签到领": { en: "Check in +", ko: "출석 +", vi: "Điểm danh +" },
+  "已签到": { en: "Checked in", ko: "출석 완료", vi: "Đã điểm danh" },
+  "签到成功": { en: "Checked in!", ko: "출석 완료!", vi: "Đã điểm danh!" },
+  "今日任务": { en: "Today's Quests", ko: "오늘의 미션", vi: "Nhiệm vụ hôm nay" },
+  "阅读": { en: "Read", ko: "읽기", vi: "Đọc" },
+  "表态": { en: "Vote", ko: "베팅", vi: "Đặt cược" },
+  "领取": { en: "Claim", ko: "받기", vi: "Nhận" },
+  "任务全清": { en: "All quests done!", ko: "미션 완료!", vi: "Hoàn thành!" },
+  "阅读奖励": { en: "Read reward", ko: "읽기 보상", vi: "Thưởng đọc" },
+
+  // 战绩榜
+  "战绩榜": { en: "Top Predictors", ko: "랭킹", vi: "Bảng thành tích" },
+  "胜率": { en: "Win", ko: "승률", vi: "Thắng" },
+  "注": { en: " bets", ko: "건", vi: " cược" },
+  "暂未结算": { en: "Unsettled", ko: "미정산", vi: "Chưa quyết toán" },
+
   // 设置
   "浅色": { en: "Light", ko: "라이트", vi: "Sáng" },
   "深色": { en: "Dark", ko: "다크", vi: "Tối" },

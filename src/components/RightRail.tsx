@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { FeedEntry } from "@/lib/feed";
-import { getLeaderboard } from "@/lib/leaderboard";
+import { getReputationLeaderboard } from "@/lib/leaderboard";
 import { getServerT } from "@/lib/i18n-server";
 
 function pct(p: number) {
@@ -19,19 +19,21 @@ const catColor: Record<string, string> = {
 
 // PC 右栏：积分榜 + 热门盘口 + 引导卡（仅 lg+ 显示，移动端不渲染）
 export default async function RightRail({ hot }: { hot: FeedEntry[] }) {
-  const [{ t }, leaders] = await Promise.all([getServerT(), getLeaderboard(5)]);
+  const [{ t }, leaders] = await Promise.all([getServerT(), getReputationLeaderboard(5)]);
 
   return (
     <div className="space-y-4">
-      {/* 积分榜 */}
+      {/* 战绩榜（reputation）：PnL 排序，副行显示胜率 · 下注数 */}
       {leaders.length > 0 && (
         <section className="rounded-2xl border border-black/8 dark:border-white/10 bg-white dark:bg-gray-900 shadow-sm p-4">
           <div className="text-sm font-semibold text-gray-700 dark:text-gray-200 mb-3">
-            🏆 {t("积分榜")}
+            🏆 {t("战绩榜")}
           </div>
           <div className="space-y-2.5">
             {leaders.map((l, i) => {
               const name = l.display_name || "玩家";
+              const up = l.pnl >= 0;
+              const winrate = l.settled > 0 ? Math.round((l.wins / l.settled) * 100) : null;
               return (
                 <div key={i} className="flex items-center gap-2.5">
                   <span className={`w-5 text-center text-[13px] ${i < 3 ? "" : "text-gray-400"}`}>
@@ -40,11 +42,21 @@ export default async function RightRail({ hot }: { hot: FeedEntry[] }) {
                   <span className="w-6 h-6 rounded-full bg-gradient-to-br from-indigo-300 to-purple-400 text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                     {name.slice(0, 1).toUpperCase()}
                   </span>
-                  <span className="text-[13px] text-gray-700 dark:text-gray-200 flex-1 truncate">
-                    {name}
-                  </span>
-                  <span className="text-[13px] font-semibold tabular-nums text-amber-600 dark:text-amber-400">
-                    {l.points.toLocaleString()}
+                  <div className="flex-1 min-w-0">
+                    <div className="text-[13px] text-gray-700 dark:text-gray-200 truncate">
+                      {name}
+                    </div>
+                    <div className="text-[11px] text-gray-400 dark:text-gray-500">
+                      {winrate !== null ? `${t("胜率")} ${winrate}%` : t("暂未结算")} · {l.votes}{t("注")}
+                    </div>
+                  </div>
+                  <span
+                    className={`text-[13px] font-semibold tabular-nums ${
+                      up ? "text-green-600 dark:text-green-400" : "text-red-500"
+                    }`}
+                  >
+                    {up ? "+" : ""}
+                    {l.pnl.toLocaleString()}
                   </span>
                 </div>
               );
