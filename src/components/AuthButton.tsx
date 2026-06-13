@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n";
 import { track } from "@/lib/track";
+import { levelInfo } from "@/lib/levels";
 import type { Profile } from "@/lib/auth";
 
 export default function AuthButton({
@@ -69,6 +70,7 @@ export default function AuthButton({
 
   // 已登录
   const name = profile.display_name ?? profile.email ?? "我";
+  const lv = levelInfo(profile.xp ?? 0);
   return (
     <div className="relative">
       <button
@@ -89,10 +91,27 @@ export default function AuthButton({
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-40 rounded-xl bg-white dark:bg-gray-800 ring-1 ring-black/10 dark:ring-white/10 shadow-lg py-1 z-20 text-[13px]">
-          <div className="px-3 py-2 text-gray-500 dark:text-gray-400 truncate border-b border-black/5 dark:border-white/10">
-            {name}
+        <div className="absolute right-0 mt-2 w-44 rounded-xl bg-white dark:bg-gray-800 ring-1 ring-black/10 dark:ring-white/10 shadow-lg py-1 z-20 text-[13px]">
+          <div className="px-3 py-2 border-b border-black/5 dark:border-white/10">
+            <div className="text-gray-700 dark:text-gray-200 truncate">{name}</div>
+            <div className={`text-[11px] ${lv.color}`}>
+              {lv.badge} Lv.{lv.level} · {t(lv.title)}
+            </div>
           </div>
+          <Link
+            href="/tasks"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200"
+          >
+            🎁 {t("每日任务")}
+          </Link>
+          <Link
+            href="/leaderboard"
+            onClick={() => setOpen(false)}
+            className="block px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200"
+          >
+            🏆 {t("排行榜")}
+          </Link>
           <Link
             href="/me"
             onClick={() => setOpen(false)}
@@ -102,7 +121,7 @@ export default function AuthButton({
           </Link>
           <button
             onClick={logout}
-            className="block w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200"
+            className="block w-full text-left px-3 py-2 hover:bg-gray-50 dark:hover:bg-white/10 text-gray-700 dark:text-gray-200 border-t border-black/5 dark:border-white/10"
           >
             {t("退出登录")}
           </button>

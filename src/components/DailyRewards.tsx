@@ -5,9 +5,11 @@
 // 未配置 Supabase 或未登录时自动不渲染。
 
 import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n";
+import { levelInfo } from "@/lib/levels";
 
 interface Status {
   auth: boolean;
@@ -18,11 +20,14 @@ interface Status {
   reads: number;
   readCap: number;
   readReward: number;
+  questReadTarget?: number;
   votes: number;
   voteTarget: number;
   questComplete: boolean;
   questClaimed: boolean;
   questReward: number;
+  xp?: number;
+  level?: number;
 }
 
 // 用户本地日期（YYYY-MM-DD），用于按本地「今天」幂等发放
@@ -93,9 +98,11 @@ export default function DailyRewards() {
 
   if (!st) return null;
 
+  const readTarget = st.questReadTarget ?? 3;
+  const lv = levelInfo(st.xp ?? 0);
   const questItems = [
     { ok: st.signedIn, label: t("签到") },
-    { ok: st.reads >= st.readCap, label: `${t("阅读")} ${Math.min(st.reads, st.readCap)}/${st.readCap}` },
+    { ok: st.reads >= readTarget, label: `${t("阅读")} ${Math.min(st.reads, readTarget)}/${readTarget}` },
     { ok: st.votes >= st.voteTarget, label: `${t("表态")} ${Math.min(st.votes, st.voteTarget)}/${st.voteTarget}` },
   ];
 
@@ -108,9 +115,12 @@ export default function DailyRewards() {
           <span className="text-sm font-semibold text-gray-800 dark:text-gray-100">
             {t("每日奖励")}
           </span>
+          <span className={`text-[11px] font-medium ${lv.color} whitespace-nowrap`}>
+            {lv.badge} Lv.{lv.level}
+          </span>
           {st.streak > 0 && (
             <span className="text-[12px] text-amber-600 dark:text-amber-400 whitespace-nowrap">
-              🔥 {t("连续")} {st.streak} {t("天")}
+              🔥 {st.streak}
             </span>
           )}
         </div>
@@ -154,9 +164,12 @@ export default function DailyRewards() {
       {/* 每日任务 */}
       <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/10">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-[13px] font-medium text-gray-700 dark:text-gray-200">
-            {t("今日任务")}
-          </span>
+          <Link
+            href="/tasks"
+            className="text-[13px] font-medium text-gray-700 dark:text-gray-200 hover:text-indigo-600 dark:hover:text-indigo-400"
+          >
+            {t("今日任务")} ›
+          </Link>
           {st.questClaimed ? (
             <span className="text-[12px] text-gray-400 dark:text-gray-500">
               ✓ +{st.questReward}

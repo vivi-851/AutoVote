@@ -1,3 +1,4 @@
+import Link from "next/link";
 import NewsFeed from "@/components/NewsFeed";
 import FeaturedRail from "@/components/FeaturedRail";
 import RightRail from "@/components/RightRail";
@@ -39,6 +40,12 @@ export default async function Home() {
             <span className="text-xs text-gray-400">{t("新闻预测信息流")}</span>
           </div>
           <div className="flex items-center gap-1">
+            <Link
+              href="/leaderboard"
+              className="text-[13px] text-gray-600 dark:text-gray-300 hover:text-indigo-600 dark:hover:text-indigo-400 px-2 py-1 font-medium"
+            >
+              🏆 {t("排行榜")}
+            </Link>
             <SettingsControl />
             <AuthButton profile={profile} enabled={supabaseEnabled} />
           </div>

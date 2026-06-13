@@ -122,6 +122,49 @@ export const DICT: Record<string, Tr> = {
   "注": { en: " bets", ko: "건", vi: " cược" },
   "暂未结算": { en: "Unsettled", ko: "미정산", vi: "Chưa quyết toán" },
 
+  // 排行榜页 / 赛季
+  "排行榜": { en: "Leaderboard", ko: "랭킹", vi: "Bảng xếp hạng" },
+  "本赛季": { en: "This Season", ko: "이번 시즌", vi: "Mùa này" },
+  "总榜": { en: "All-time", ko: "전체", vi: "Mọi thời" },
+  "当前赛季": { en: "Current season", ko: "현재 시즌", vi: "Mùa hiện tại" },
+  "截止": { en: "Ends", ko: "종료", vi: "Kết thúc" },
+  "名人堂": { en: "Hall of Fame", ko: "명예의 전당", vi: "Vinh danh" },
+  "按已实现盈亏（PnL）排名 · 赢家才上榜": {
+    en: "Ranked by realized PnL · winners only",
+    ko: "실현 손익(PnL) 순 · 승자만",
+    vi: "Xếp theo PnL đã chốt · chỉ người thắng",
+  },
+  "暂无战绩，去表个态": { en: "No record yet — go make a call", ko: "기록 없음 — 베팅해 보세요", vi: "Chưa có — đặt cược nào" },
+  "本赛季盈亏": { en: "Season P&L", ko: "시즌 손익", vi: "Lãi/lỗ mùa" },
+  "看榜": { en: "View", ko: "랭킹 보기", vi: "Xem bảng" },
+
+  // 每日任务页 / 等级
+  "每日任务": { en: "Daily Quests", ko: "데일리 미션", vi: "Nhiệm vụ" },
+  "每日签到": { en: "Daily check-in", ko: "데일리 출석", vi: "Điểm danh" },
+  "登录后赚积分、做任务、冲榜": {
+    en: "Sign in to earn points, do quests, climb the board",
+    ko: "로그인하고 포인트·미션·랭킹에 도전",
+    vi: "Đăng nhập để kiếm điểm, làm nhiệm vụ, leo hạng",
+  },
+  "距下一级还需": { en: "to next level:", ko: "다음 레벨까지", vi: "lên cấp cần" },
+  "每日阅读上限": { en: "Daily read cap", ko: "일일 읽기 한도", vi: "Đọc tối đa/ngày" },
+  "篇": { en: "", ko: "개", vi: "" },
+  "签到加成": { en: "Check-in bonus", ko: "출석 보너스", vi: "Thưởng điểm danh" },
+  "AI 新盘口抢先看": { en: "Early AI markets", ko: "AI 신규 마켓 우선", vi: "Xem sớm thị trường AI" },
+  "专属头像光环": { en: "Avatar halo", ko: "프로필 후광", vi: "Vầng hào quang" },
+  "积分明细": { en: "Points history", ko: "포인트 내역", vi: "Lịch sử điểm" },
+  "赛季奖励": { en: "Season reward", ko: "시즌 보상", vi: "Thưởng mùa" },
+  "下注": { en: "Bet", ko: "베팅", vi: "Đặt cược" },
+
+  // 等级称号
+  "新人": { en: "Rookie", ko: "초보", vi: "Tân binh" },
+  "入门玩家": { en: "Beginner", ko: "입문자", vi: "Người mới" },
+  "进阶玩家": { en: "Rising", ko: "중급자", vi: "Đang lên" },
+  "老练玩家": { en: "Seasoned", ko: "숙련자", vi: "Lão luyện" },
+  "大师": { en: "Master", ko: "마스터", vi: "Cao thủ" },
+  "宗师": { en: "Grandmaster", ko: "그랜드마스터", vi: "Đại sư" },
+  "预言家": { en: "Oracle", ko: "예언자", vi: "Nhà tiên tri" },
+
   // 设置
   "浅色": { en: "Light", ko: "라이트", vi: "Sáng" },
   "深色": { en: "Dark", ko: "다크", vi: "Tối" },

@@ -59,6 +59,20 @@
 - **幂等与防刷**：按用户**本地日期**去重（客户端传 `p_local_date`，服务端校验 ±1 天）；`daily_claims` 主键 `(user_id, day, kind, ref)` 兜底；读取/发放只走 RPC，表 RLS 仅可读自己。
 - **战绩统一口径**：`resolve_generated_market` 结算时给 `bets` 盖「已平仓」章（`closed/exit_price/proceeds`），与 Polymarket 卖出平仓口径一致 → 战绩榜与 `/me` 的已实现盈亏可统一计算（迁移含历史回填）。
 
+### v2 · 等级（XP）+ 主题赛季 + 独立页面
+**等级（轨道 B 的成长线，`profiles.xp`）**：经验只增不减，公式 `level = floor(sqrt(xp/100))+1`（前端 `lib/levels.ts` 与 `supabase/v2.sql` 同一公式）。
+- **XP 来源**（触发器自动，不改下注 RPC）：下注 +10（`bets` insert 触发）、签到 +5 / 阅读 +5 / 任务 +20（`point_ledger` insert 触发）、押对结算 +50（`resolve` 内）。
+- **实用特权**：每日阅读上限随等级 `3 + min(⌊level/5⌋,3)`（L5=4/L10=5/L15=6，服务端 `claim_read_reward` 强制）；签到等级加成 `(level-1)*2`；L7 AI 新盘口抢先看、L10 头像光环（展示位）。段位称号 新人→…→预言家。
+
+**主题赛季（themed season + PnL race）**：`seasons` 表，月度窗口，带主题文案与关联分类。
+- **赛季榜**：按「赛季窗口内已结算 PnL」排序（`season_leaderboard`）；首页/排行榜页可切「本赛季 / 总榜」。
+- **结算与名人堂**：到期由 `/api/season/close`（月度 cron + `GENERATE_SECRET` 守卫）调 `close_season` → Top10 入 `season_results`（名人堂）+ 派奖励积分（1000/600/400/200…，走 `season` 流水）+ 标记 ended + **自动开下一季**。
+
+**新增页面 / 入口**：
+- **`/leaderboard`**（导航栏 🏆 排行榜）：赛季横幅 + 本赛季/总榜切换（PnL/ROI/胜率/下注数/等级）+ 名人堂。
+- **`/tasks`**（头像菜单 🎁 每日任务）：等级与特权 + 签到日历 + 任务清单 + 赛季进度 + 积分流水（`point_ledger`）。
+- 头像菜单显示等级徽章；首页 `DailyRewards` 卡显示等级并链到 `/tasks`。
+
 ## 核心体验
 1. **新闻信息流（首页）** — 社交流样式的真实新闻卡（图文 / YouTube 视频 / 顶部精选横滑 / 无限滚动），每条内嵌相关盘口，可**一键用积分表态**。Polymarket 盘口与 **AI 生成盘口**混排。
 2. **新闻详情** — 原文来源 + AI TL;DR 摘要 + 完整可下注盘口 + 评论区。
@@ -77,6 +91,7 @@
 | — | **无限分页**（Polymarket 按成交量翻页 + 新闻 + AI 盘口） | ✅ |
 | — | 深浅主题 + 中/英/韩/越 多语言 | ✅ |
 | M4 | 能留：**每日留存**（两轨积分：签到 / 阅读 / 任务领分 + 首页战绩榜） | ✅ v1 |
+| M5 | 能上瘾：**等级（XP+实用特权）+ 主题赛季（PnL race + 名人堂）+ 排行榜页 / 每日任务页** | ✅ v2 |
 
 ## 数据来源与逻辑
 - **盘口**：Polymarket Gamma API（只读），政治 + 泛热点活跃市场，按成交量翻页；历史概率走 CLOB `prices-history`（组合市值曲线用）。
@@ -103,7 +118,7 @@
 | `DEEPSEEK_API_KEY` | DeepSeek 服务端密钥（AI 生成/结算盘口）。可用 `LLM_BASE_URL`/`LLM_MODEL` 覆盖换其他 OpenAI 兼容模型 | AI 盘口 |
 
 未配置任一项时对应功能优雅降级（登录显示"待配置"、新闻回退策划内容、无 AI 盘口），不影响其余部分。
-数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）、`supabase/leaderboard.sql`（积分榜）、`supabase/rewards.sql`（**每日留存**：两轨积分流水 + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章回填）。
+数据库 schema 依次执行：`supabase/schema.sql`（账户/下注）、`supabase/generated_markets.sql`（AI 盘口）、`supabase/trading.sql`（卖出/平仓）、`supabase/events.sql`（漏斗埋点）、`supabase/admin.sql`（运营后台）、`supabase/leaderboard.sql`（积分榜）、`supabase/rewards.sql`（**每日留存 v1**：两轨积分流水 + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章回填）、`supabase/v2.sql`（**等级 + 主题赛季**：xp 列 + 等级/特权 + 赛季表与 RPC + 名人堂，覆盖 v1 的 signin/read/resolve/daily_status/reputation_leaderboard）。
 
 埋点字段字典与漏斗 SQL 见 [`docs/analytics.md`](docs/analytics.md)。
 
@@ -130,15 +145,19 @@ src/
     page.tsx                  # 信息流首页（Server Component）
     news/[id]/page.tsx        # 新闻详情（id=市场 slug / 策划 id / 生成盘口 uuid）
     me/page.tsx               # 我的预测（持仓 + 历史 + 盈亏曲线 + 平仓）
+    leaderboard/page.tsx      # 排行榜（本赛季 / 总榜 + 名人堂）
+    tasks/page.tsx            # 每日任务（等级 + 签到 + 任务 + 赛季 + 积分流水）
     admin/                    # 运营后台（管理员）：layout 鉴权门 + 漏斗看板
     auth/callback/route.ts    # Google OAuth 回调
     actions.ts                # Server Action：无限分页 loadMoreFeed
     api/generate/route.ts     # AI 生成盘口（拉头条 → DeepSeek → 写库）
     api/resolve/route.ts      # AI 盘口到期结算（DeepSeek 判定 → 派分）
+    api/season/close/route.ts # 赛季到期结算（close_season → 名人堂 + 派奖 + 开下一季，月度 cron）
   components/
     NewsFeed / NewsCard       # 信息流（tab / 视频 / 社交 / 无限滚动）+ 卡片
     FeaturedRail / QuickBet   # 精选横滑卡 / feed 内一键下注
     DailyRewards / ReadReward # 每日奖励面板（签到+任务）/ 详情页阅读奖励（隐形）
+    LeaderboardTabs / TasksPanel # 排行榜页（本赛季/总榜切换）/ 每日任务页主体（等级+签到+任务+赛季+流水）
     RightRail                 # PC 右栏：积分榜 + 热门盘口（移动端不渲染）
     FeedCard                  # 详情页完整可下注盘口（含 AI 盘口 AMM）
     ClosePositionButton       # 卖出/平仓
@@ -154,6 +173,7 @@ src/
     i18n-dict.ts / i18n.tsx / i18n-server.ts / theme.tsx   # 多语言 + 主题
     auth.ts / supabase/*      # 账户与会话
     track.ts / outbound.ts    # 客户端漏斗埋点 / 出站返佣 choke-point
+    levels.ts / leaderboard.ts # 等级公式+特权（与 v2.sql 同步）/ 战绩榜·赛季榜·名人堂数据层
   middleware.ts               # Supabase 会话刷新 + 写入匿名 id（埋点 anon_id）
 supabase/
   schema.sql                  # profiles / bets / place_bet / 触发器
@@ -162,8 +182,9 @@ supabase/
   events.sql                  # 漏斗埋点事件表（append-only + RLS）
   admin.sql                   # is_admin 标记 + admin_metrics 看板 RPC
   leaderboard.sql             # 积分榜 RPC（SECURITY DEFINER 绕过 profiles RLS）
-  rewards.sql                 # 每日留存：point_ledger / daily_state / daily_claims + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章
+  rewards.sql                 # 每日留存 v1：point_ledger / daily_state / daily_claims + 签到/阅读/任务 RPC + 战绩榜 + 结算盖章
+  v2.sql                      # 等级+赛季：profiles.xp + level/特权 + seasons / season_results + 赛季榜/名人堂/close_season + XP 触发器
 docs/
   analytics.md                # 埋点字段字典 + 漏斗 SQL
-vercel.json                   # 每日 cron：生成(08:00) / 结算(08:30)
+vercel.json                   # cron：生成(每日08:00) / 结算(每日08:30) / 赛季结算(每月1日00:05)
 ```
