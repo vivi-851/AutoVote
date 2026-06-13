@@ -8,7 +8,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { useT } from "@/lib/i18n";
-import { levelInfo } from "@/lib/levels";
+import { levelInfo, tierForLevel, TIERS } from "@/lib/levels";
 
 interface Status {
   auth: boolean;
@@ -123,6 +123,7 @@ export default function TasksPanel() {
   if (!st) return null;
 
   const lv = levelInfo(st.xp);
+  const curTier = tierForLevel(lv.level);
   const sourceLabel: Record<string, string> = {
     signin: t("签到"),
     read: t("阅读"),
@@ -183,6 +184,43 @@ export default function TasksPanel() {
                 {p}
               </span>
             ))}
+        </div>
+
+        {/* 段位阶梯：每个段位悬停看说明 */}
+        <div className="mt-4 pt-3 border-t border-black/5 dark:border-white/10">
+          <div className="text-[12px] text-gray-400 dark:text-gray-500 mb-2">
+            {t("段位说明")} · {t("悬停查看")}
+          </div>
+          <div className="flex flex-wrap gap-1.5">
+            {TIERS.map((tr) => {
+              const reached = lv.level >= tr.minLevel;
+              const isCurrent = tr.minLevel === curTier.minLevel;
+              return (
+                <div key={tr.minLevel} className="relative group">
+                  <span
+                    className={`inline-flex items-center gap-1 text-[11px] rounded-full px-2 py-0.5 ring-1 transition cursor-default ${
+                      isCurrent
+                        ? `${tr.color} ring-2 ring-current font-semibold`
+                        : reached
+                        ? `${tr.color} ring-black/10 dark:ring-white/15`
+                        : "text-gray-400 dark:text-gray-600 ring-black/5 dark:ring-white/10 opacity-70"
+                    }`}
+                  >
+                    {tr.badge} {t(tr.title)}
+                  </span>
+                  {/* hover 说明 */}
+                  <div className="pointer-events-none absolute z-30 left-1/2 -translate-x-1/2 bottom-full mb-2 w-48 rounded-lg bg-gray-900 dark:bg-gray-700 text-white text-[11px] p-2.5 opacity-0 group-hover:opacity-100 transition shadow-xl">
+                    <div className="font-semibold mb-0.5">
+                      {tr.badge} {t(tr.title)} · Lv.{tr.minLevel}
+                      {t("起")}
+                    </div>
+                    <div className="text-white/80 leading-relaxed">{t(tr.desc)}</div>
+                    <div className="absolute left-1/2 -translate-x-1/2 top-full w-2 h-2 rotate-45 bg-gray-900 dark:bg-gray-700 -mt-1" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       </section>
 

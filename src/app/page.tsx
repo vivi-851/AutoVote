@@ -3,7 +3,6 @@ import NewsFeed from "@/components/NewsFeed";
 import FeaturedRail from "@/components/FeaturedRail";
 import RightRail from "@/components/RightRail";
 import AuthButton from "@/components/AuthButton";
-import DailyRewards from "@/components/DailyRewards";
 import SettingsControl from "@/components/SettingsControl";
 import { getProfile } from "@/lib/auth";
 import { getFeedEntries } from "@/lib/feed";
@@ -62,8 +61,6 @@ export default async function Home() {
               {t("读新闻，顺手看看市场怎么押注 —— 你怎么看？")}
             </p>
           </div>
-
-          {loggedIn && <DailyRewards />}
 
           <FeaturedRail entries={featured} />
 

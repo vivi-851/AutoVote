@@ -165,6 +165,46 @@ export const DICT: Record<string, Tr> = {
   "宗师": { en: "Grandmaster", ko: "그랜드마스터", vi: "Đại sư" },
   "预言家": { en: "Oracle", ko: "예언자", vi: "Nhà tiên tri" },
 
+  // 段位说明（hover）
+  "段位说明": { en: "Tiers", ko: "등급 안내", vi: "Hạng bậc" },
+  "悬停查看": { en: "hover for details", ko: "마우스를 올려 확인", vi: "di chuột để xem" },
+  "起": { en: "+", ko: " 이상", vi: " trở lên" },
+  "刚起步 · 每日阅读上限 3 篇": {
+    en: "Just starting · 3 reads/day",
+    ko: "시작 단계 · 하루 3개 읽기",
+    vi: "Mới bắt đầu · 3 bài/ngày",
+  },
+  "解锁签到等级加成，越签越多": {
+    en: "Unlocks check-in level bonus",
+    ko: "출석 레벨 보너스 해제",
+    vi: "Mở thưởng điểm danh theo cấp",
+  },
+  "稳定参与 · 签到加成持续提升": {
+    en: "Steady play · bigger check-in bonus",
+    ko: "꾸준한 참여 · 출석 보너스 증가",
+    vi: "Chơi đều · thưởng điểm danh tăng",
+  },
+  "每日阅读上限 4 篇 · AI 新盘口抢先看": {
+    en: "4 reads/day · early AI markets",
+    ko: "하루 4개 읽기 · AI 신규 마켓 우선",
+    vi: "4 bài/ngày · xem sớm thị trường AI",
+  },
+  "每日阅读上限 5 篇 · 专属头像光环": {
+    en: "5 reads/day · avatar halo",
+    ko: "하루 5개 읽기 · 프로필 후광",
+    vi: "5 bài/ngày · vầng hào quang",
+  },
+  "每日阅读上限 6 篇 · 顶尖战绩象征": {
+    en: "6 reads/day · elite status",
+    ko: "하루 6개 읽기 · 최상위 상징",
+    vi: "6 bài/ngày · biểu tượng đỉnh cao",
+  },
+  "最高段位 · 预测之王": {
+    en: "Top tier · king of predictions",
+    ko: "최고 등급 · 예측의 왕",
+    vi: "Hạng cao nhất · vua dự đoán",
+  },
+
   // 设置
   "浅色": { en: "Light", ko: "라이트", vi: "Sáng" },
   "深色": { en: "Dark", ko: "다크", vi: "Tối" },

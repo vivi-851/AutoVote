@@ -39,15 +39,30 @@ export interface LevelInfo {
   avatarHalo: boolean; // L10+：专属头像光环
 }
 
-// 段位称号（每若干级一个称号）。badge 走 emoji。
-function tier(level: number): { title: string; badge: string; color: string } {
-  if (level >= 20) return { title: "预言家", badge: "🔮", color: "text-fuchsia-500" };
-  if (level >= 15) return { title: "宗师", badge: "👑", color: "text-amber-500" };
-  if (level >= 10) return { title: "大师", badge: "💎", color: "text-cyan-500" };
-  if (level >= 7) return { title: "老练玩家", badge: "🦅", color: "text-indigo-500" };
-  if (level >= 4) return { title: "进阶玩家", badge: "🔥", color: "text-orange-500" };
-  if (level >= 2) return { title: "入门玩家", badge: "⭐", color: "text-blue-500" };
-  return { title: "新人", badge: "🌱", color: "text-emerald-500" };
+// 段位阶梯（单一数据源）。title / desc 为中文 DICT key，UI 走 t() 翻译。
+export interface Tier {
+  minLevel: number; // 进入该段位的最低等级
+  title: string;
+  badge: string; // emoji
+  color: string; // tailwind 文字色
+  desc: string; // 段位说明（hover 展示）
+}
+
+export const TIERS: Tier[] = [
+  { minLevel: 1, title: "新人", badge: "🌱", color: "text-emerald-500", desc: "刚起步 · 每日阅读上限 3 篇" },
+  { minLevel: 2, title: "入门玩家", badge: "⭐", color: "text-blue-500", desc: "解锁签到等级加成，越签越多" },
+  { minLevel: 4, title: "进阶玩家", badge: "🔥", color: "text-orange-500", desc: "稳定参与 · 签到加成持续提升" },
+  { minLevel: 7, title: "老练玩家", badge: "🦅", color: "text-indigo-500", desc: "每日阅读上限 4 篇 · AI 新盘口抢先看" },
+  { minLevel: 10, title: "大师", badge: "💎", color: "text-cyan-500", desc: "每日阅读上限 5 篇 · 专属头像光环" },
+  { minLevel: 15, title: "宗师", badge: "👑", color: "text-amber-500", desc: "每日阅读上限 6 篇 · 顶尖战绩象征" },
+  { minLevel: 20, title: "预言家", badge: "🔮", color: "text-fuchsia-500", desc: "最高段位 · 预测之王" },
+];
+
+// 取某等级所属段位（最高的 minLevel ≤ level）
+export function tierForLevel(level: number): Tier {
+  let cur = TIERS[0];
+  for (const tr of TIERS) if (level >= tr.minLevel) cur = tr;
+  return cur;
 }
 
 export function levelInfo(xp: number): LevelInfo {
@@ -56,7 +71,7 @@ export function levelInfo(xp: number): LevelInfo {
   const nextAt = xpForLevel(level + 1);
   const span = Math.max(nextAt - base, 1);
   const intoLevel = xp - base;
-  const { title, badge, color } = tier(level);
+  const { title, badge, color } = tierForLevel(level);
   return {
     level,
     title,

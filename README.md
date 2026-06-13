@@ -71,7 +71,7 @@
 **新增页面 / 入口**：
 - **`/leaderboard`**（导航栏 🏆 排行榜）：赛季横幅 + 本赛季/总榜切换（PnL/ROI/胜率/下注数/等级）+ 名人堂。
 - **`/tasks`**（头像菜单 🎁 每日任务）：等级与特权 + 签到日历 + 任务清单 + 赛季进度 + 积分流水（`point_ledger`）。
-- 头像菜单显示等级徽章；首页 `DailyRewards` 卡显示等级并链到 `/tasks`。
+- 头像菜单显示等级徽章并链到 `/tasks`、`/leaderboard`。`/tasks` 等级栏含**段位阶梯**，悬停看每个段位的解锁说明。
 
 ## 核心体验
 1. **新闻信息流（首页）** — 社交流样式的真实新闻卡（图文 / YouTube 视频 / 顶部精选横滑 / 无限滚动），每条内嵌相关盘口，可**一键用积分表态**。Polymarket 盘口与 **AI 生成盘口**混排。
@@ -156,8 +156,8 @@ src/
   components/
     NewsFeed / NewsCard       # 信息流（tab / 视频 / 社交 / 无限滚动）+ 卡片
     FeaturedRail / QuickBet   # 精选横滑卡 / feed 内一键下注
-    DailyRewards / ReadReward # 每日奖励面板（签到+任务）/ 详情页阅读奖励（隐形）
-    LeaderboardTabs / TasksPanel # 排行榜页（本赛季/总榜切换）/ 每日任务页主体（等级+签到+任务+赛季+流水）
+    ReadReward                # 详情页阅读奖励（隐形，停留 ≥8s 领分）
+    LeaderboardTabs / TasksPanel # 排行榜页（本赛季/总榜切换）/ 每日任务页主体（等级+段位说明+签到+任务+赛季+流水）
     RightRail                 # PC 右栏：积分榜 + 热门盘口（移动端不渲染）
     FeedCard                  # 详情页完整可下注盘口（含 AI 盘口 AMM）
     ClosePositionButton       # 卖出/平仓
